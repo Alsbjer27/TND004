@@ -1,3 +1,9 @@
+# General
+*.log
+*.tmp
+*.cache
+*.bak
+
 # Prerequisites
 *.d
 
@@ -30,3 +36,68 @@
 *.exe
 *.out
 *.app
+
+# CMake build directories and files
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# CMake specific
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+**/CMakeOutput.log
+**/CMakeError.log
+**/compile_commands.json
+**/Testing/
+
+# Visual Studio specific
+**/.vs/
+**/*.vcxproj
+**/*.vcxproj.filters
+**/*.vcxproj.user
+**/*.suo
+**/*.user
+**/*.userosscache
+**/*.usertask
+**/*.sln
+**/*.ipch
+**/*.ncb
+**/*.db
+**/*.opendb
+**/*.opensdf
+**/*.sdf
+**/*.VC.db
+**/*.VC.opendb
+
+# Visual Studio Code workspace settings
+.vscode/
+*.code-workspace
+
+# Debug and Release directories
+Debug/
+Release/
+
+# Temporary and intermediate files
+*.tlog
+*.lastbuildstate
+*.idb
+*.pdb
+*.ilk
+*.obj
+*.lib
+*.exp
+*.iobj
+*.ipdb
+*.res
+*.rsp
+*.tlb
+*.tli
+*.tlh
+
+# Windows Thumbnail database files
+Thumbs.db
+ehthumbs.db
