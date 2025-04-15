@@ -187,9 +187,44 @@ bool Set::operator==(const Set& S) const {
  * Set *this is modified and then returned
  */
 Set& Set::operator+=(const Set& S) {
-    // IMPLEMENT
+    Set result;
+    Node* currentA = head->next;
+    Node* currentB = S.head->next;
+    Node* result_end = result.head; 
+
+    while (currentA != tail && currentB != S.tail) {
+        if (currentA->value < currentB->value) {
+            result.insert_node(result_end, currentA->value);
+            currentA = currentA->next;
+        }
+        else if (currentA->value > currentB->value) {
+            result.insert_node(result_end, currentB->value);
+            currentB = currentB->next;
+        }
+        else {
+            result.insert_node(result_end, currentA->value);  // same value, insert once
+            currentA = currentA->next;
+            currentB = currentB->next;
+        }
+        result_end = result_end->next;
+    }
+
+    while (currentA != tail) {
+        result.insert_node(result_end, currentA->value);
+        currentA = currentA->next;
+        result_end = result_end->next;
+    }
+
+    while (currentB != S.tail) {
+        result.insert_node(result_end, currentB->value);
+        currentB = currentB->next;
+        result_end = result_end->next;
+    }
+
+    *this = result;
     return *this;
 }
+
 
 /*
  * Modify Set *this such that it becomes the intersection of *this with Set S
