@@ -196,13 +196,10 @@ void execute(std::vector<int>& V, const std::vector<int>& res) {
     std::vector<int> copy_{V};
 
     std::cout << "\n\nIterative stable partition\n\n";
-    TND004::stable_partition_iterative(V, even);
+    TND004::stable_partition_iterative(V, even);    
     assert(V == res);  // compare with the expected result
 
-    std::cout << "Partitioned sequence:\n";
-    std::for_each(std::begin(V), std::end(V), Formatter<int>(std::cout, 8, 5));
-    std::cout << "\n";
-    
+
     // Uncomment for exercise 2
     std::cout << "Divide-and-conquer stable partition\n";
     TND004::stable_partition(copy_, even);
@@ -250,7 +247,7 @@ std::vector<int>::iterator TND004::stable_partition(std::vector<int>::iterator f
         if (first != last && p(*first)) {
             return last;
         }
-        else {
+        else{
             return first;
         }
     }
@@ -261,5 +258,6 @@ std::vector<int>::iterator TND004::stable_partition(std::vector<int>::iterator f
     auto itRight = stable_partition(mid, last, p);
 
     auto itEnd = std::rotate(itLeft, mid, itRight);
+
     return itEnd; 
 }
