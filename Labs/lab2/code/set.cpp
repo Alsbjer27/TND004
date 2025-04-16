@@ -187,41 +187,28 @@ bool Set::operator==(const Set& S) const {
  * Set *this is modified and then returned
  */
 Set& Set::operator+=(const Set& S) {
-    Set result;
-    Node* currentA = head->next;
-    Node* currentB = S.head->next;
-    Node* result_end = result.head; 
-
-    while (currentA != tail && currentB != S.tail) {
-        if (currentA->value < currentB->value) {
-            result.insert_node(result_end, currentA->value);
+   
+    Node* currentA = head;
+    Node* currentB = S.head;
+    while (currentA->next != tail && currentB->next != S.tail) {
+        if (currentA->next->value < currentB->next->value) {
             currentA = currentA->next;
         }
-        else if (currentA->value > currentB->value) {
-            result.insert_node(result_end, currentB->value);
+        if (currentA->next->value > currentB->next->value) {
+            insert_node(currentA, currentB->next->value);
             currentB = currentB->next;
+            
         }
-        else {
-            result.insert_node(result_end, currentA->value);  // same value, insert once
+        if(currentA->next->value == currentB->next->value ) {
             currentA = currentA->next;
             currentB = currentB->next;
         }
-        result_end = result_end->next;
     }
-
-    while (currentA != tail) {
-        result.insert_node(result_end, currentA->value);
+    while (currentB->next != S.tail) {
+        insert_node(currentA, currentB->next->value);
         currentA = currentA->next;
-        result_end = result_end->next;
-    }
-
-    while (currentB != S.tail) {
-        result.insert_node(result_end, currentB->value);
         currentB = currentB->next;
-        result_end = result_end->next;
     }
-
-    *this = result;
     return *this;
 }
 
@@ -232,6 +219,29 @@ Set& Set::operator+=(const Set& S) {
  */
 Set& Set::operator*=(const Set& S) {
     // IMPLEMENT
+    Node* currentA = head->next;
+    Node* currentB = S.head->next;
+
+    while (currentA != tail && currentB != S.tail) {
+        if (currentA->value < currentB->value) {
+            Node* deleteNode = currentA;
+            currentA = currentA->next;
+            remove_node(deleteNode);
+        }
+        else if (currentA->value > currentB->value) {
+            currentB = currentB->next;
+        }
+        else{
+            currentA = currentA->next;
+            currentB = currentB->next;
+        }
+    }
+
+    while (currentA != tail) {
+        Node* deleteNode = currentA;
+        currentA = currentA->next;
+        remove_node(deleteNode);
+    }
     return *this;
 }
 
@@ -241,6 +251,24 @@ Set& Set::operator*=(const Set& S) {
  */
 Set& Set::operator-=(const Set& S) {
     // IMPLEMENT
+    Node* currentA = head->next;
+    Node* currentB = S.head->next;
+
+    while (currentA != tail && currentB != S.tail) {
+        if (currentA->value < currentB->value) {
+            currentA = currentA->next;
+        }
+        else if (currentA->value > currentB->value) {
+            currentB = currentB->next;
+        }
+        else {
+            Node* deleteNode = currentA;
+            currentA = currentA->next;
+            currentB = currentB->next;
+            remove_node(deleteNode);
+        }
+    }
+
     return *this;
 }
 
