@@ -72,9 +72,11 @@ private:
      */
     bool isMinHeap() const;
 
-
     // PercolateDown
     void percolateDown(std::vector<Comparable>& pq, int i);
+
+    // PercolateUp
+    void percolateUp(std::vector<Comparable>& pq, int i);
 };
 
 /* *********************** Member functions implementation *********************** */
@@ -158,7 +160,11 @@ template <class Comparable>
 Comparable PriorityQueue<Comparable>::deleteMin() {
     assert(!isEmpty());  // Ensure the queue is not empty
 
-    
+    Comparable minElement = pq[1];
+
+    pq[1] = pq[pq.size() - 1];
+    pq.pop_back();
+
 
     // Ensure the heap property is maintained
 #ifdef TEST_PRIORITY_QUEUE
@@ -177,6 +183,9 @@ void PriorityQueue<Comparable>::insert(const Comparable& x) {
     /*
      * ADD CODE HERE
      */
+
+    pq.push_back(x);
+    percolateUp(pq, pq.size() - 1);
     // Do not remove this code block
 #ifdef TEST_PRIORITY_QUEUE
     assert(isMinHeap());
@@ -209,12 +218,25 @@ bool PriorityQueue<Comparable>::isMinHeap() const {
     /*
      * ADD CODE HERE
     */
-    return false;  // replace this line by the correct return value
+    int n = pq.size() - 1;            
+    for (int i = 1; i <= n / 2; ++i) {  
+        int left = 2 * i;
+        int right = 2 * i + 1;
+
+        if (left <= n && pq[i] > pq[left]) {
+            return false;
+        }
+  
+        if (right <= n && pq[i] > pq[right]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 template <class Comparable>
-void percolateDown(std::vector<Comparable>& pq, int i) {
-    int temp = pq[i];
+void PriorityQueue<Comparable>::percolateDown(std::vector<Comparable>& pq, int i) {
+    Comparable temp = pq[i];
     int c = 2 * i;
     int n = size(pq) - 1;
 
@@ -228,6 +250,19 @@ void percolateDown(std::vector<Comparable>& pq, int i) {
             c = 2 * i;
         } else
             break;
+    }
+    pq[i] = temp;
+}
+
+template <class Comparable>
+void PriorityQueue<Comparable>::percolateUp(std::vector<Comparable>& pq, int i) {
+    Comparable temp = pq[i];
+    int parent = (i - 1) / 2;
+
+    while (i > 0 && pq[parent] > temp) {
+        pq[i] = pq[parent];
+        i = parent;
+        parent = (i - 1) / 2;
     }
     pq[i] = temp;
 }
