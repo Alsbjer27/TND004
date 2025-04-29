@@ -6,7 +6,7 @@
 #include <span>
 #include <functional>
 
-#define USE_PRIORITY_QUEUE_VECTOR
+//#define USE_PRIORITY_QUEUE_VECTOR
 
 #ifdef USE_PRIORITY_QUEUE_VECTOR
     #include <particlesystem/priorityqueue-vector.h>
