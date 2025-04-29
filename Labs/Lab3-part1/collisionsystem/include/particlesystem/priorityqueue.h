@@ -107,6 +107,7 @@ void PriorityQueue<Comparable>::makeEmpty() {
     /*
      * ADD CODE HERE
      */
+    pq.clear();
 }
 
 /**
