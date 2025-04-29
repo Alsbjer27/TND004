@@ -71,6 +71,10 @@ private:
      * Test whether pq is a min heap
      */
     bool isMinHeap() const;
+
+
+    // PercolateDown
+    void percolateDown(std::vector<Comparable>& pq, int i);
 };
 
 /* *********************** Member functions implementation *********************** */
@@ -151,19 +155,18 @@ Comparable PriorityQueue<Comparable>::findMin() {
  */
 template <class Comparable>
 Comparable PriorityQueue<Comparable>::deleteMin() {
-    assert(!isEmpty());  // do not remove this line
+    assert(!isEmpty());  // Ensure the queue is not empty
 
-    /*
-     * ADD CODE HERE
-     */
+    
 
-    // Do not remove this code block
+    // Ensure the heap property is maintained
 #ifdef TEST_PRIORITY_QUEUE
     assert(isMinHeap());
 #endif
 
-    return Comparable{};  // replace this line by the correct return value
+    return minElement;  // Return the smallest element
 }
+
 
 /**
  * Add a new element x to the queue
@@ -203,4 +206,24 @@ bool PriorityQueue<Comparable>::isMinHeap() const {
      * ADD CODE HERE
     */
     return false;  // replace this line by the correct return value
+}
+
+template <class Comparable>
+void percolateDown(std::vector<Comparable>& pq, int i) {
+    int temp = pq[i];
+    int c = 2 * i;
+    int n = size(pq) - 1;
+
+    while (c <= n) {
+        if (c < n) {
+            if (pq[c + 1] < pq[c]) c++;
+        }
+        if (pq[c] < temp) {
+            pq[i] = pq[c];
+            i = c;
+            c = 2 * i;
+        } else
+            break;
+    }
+    pq[i] = temp;
 }
