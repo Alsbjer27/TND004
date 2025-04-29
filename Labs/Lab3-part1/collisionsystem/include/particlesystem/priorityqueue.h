@@ -177,7 +177,6 @@ void PriorityQueue<Comparable>::insert(const Comparable& x) {
     /*
      * ADD CODE HERE
      */
-
     // Do not remove this code block
 #ifdef TEST_PRIORITY_QUEUE
     assert(isMinHeap());
