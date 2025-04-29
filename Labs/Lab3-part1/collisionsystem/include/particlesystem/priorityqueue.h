@@ -142,7 +142,7 @@ Comparable PriorityQueue<Comparable>::findMin() {
     /*
      * ADD CODE HERE
      */
-    return Comparable{};  // replace this line by the correct return value
+    return pq[1];  // replace this line by the correct return value
 }
 
 /**
