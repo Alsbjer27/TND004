@@ -87,7 +87,8 @@ PriorityQueue<Comparable>::PriorityQueue(int initCapacity) {
     /*
      * ADD CODE HERE
      */
-    pq.reserve(initCapacity);
+    pq.reserve(initCapacity + 1);
+    pq.push_back(Comparable{});
     assert(isEmpty());  // do not remove this line
 }
 
@@ -112,6 +113,7 @@ void PriorityQueue<Comparable>::makeEmpty() {
      * ADD CODE HERE
      */
     pq.clear();
+    pq.push_back(Comparable{});
 }
 
 /**
@@ -123,8 +125,7 @@ bool PriorityQueue<Comparable>::isEmpty() const {
     /*
      * ADD CODE HERE
      */
-
-    return pq.size() == 0;  // replace this line by the correct return value
+    return pq.size() <= 1;  // replace this line by the correct return value
 }
 
 /**
@@ -135,7 +136,7 @@ size_t PriorityQueue<Comparable>::size() const {
     /*
      * ADD CODE HERE
      */
-    return pq.size();  // replace this line by the correct return value
+    return pq.size() - 1;  // replace this line by the correct return value
 }
 
 /**
