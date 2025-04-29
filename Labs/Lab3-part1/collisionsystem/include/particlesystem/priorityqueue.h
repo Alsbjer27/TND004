@@ -192,10 +192,14 @@ void PriorityQueue<Comparable>::insert(const Comparable& x) {
 template <class Comparable>
 void PriorityQueue<Comparable>::heapify() {
     assert(pq.size() > 1);  // do not remove this line
-
     /*
      * ADD CODE HERE
      */
+    int n = pq.size() - 1;
+
+    for (int i = n / 2; i >= 1; --i) {
+        percolateDown(pq, i);
+    }
 }
 
 /**
