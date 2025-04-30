@@ -218,51 +218,56 @@ bool PriorityQueue<Comparable>::isMinHeap() const {
     /*
      * ADD CODE HERE
     */
-    int n = pq.size() - 1;            
-    for (int i = 1; i <= n / 2; ++i) {  
-        int left = 2 * i;
-        int right = 2 * i + 1;
+    for (size_t i = 1; i < this->size(); i++) {
 
-        if (left <= n && pq[i] > pq[left]) {
-            return false;
-        }
-  
-        if (right <= n && pq[i] > pq[right]) {
-            return false;
-        }
+        if (this->size() == 1) return true;
+
+        bool isLeafL = (2 * i) > this->size();
+        if (isLeafL) break;  // stops when first leaf is hit
+        auto leftChild = 2 * i;
+        if (pq[i] > pq[leftChild]) return false;
+
+        bool isLeafR = 2 * i + 1 > this->size();
+        if (isLeafR) break;
+        auto rightChild = leftChild + 1;
+        if (pq[i] > pq[rightChild]) return false;
     }
-    return true;
+    return true;  // delete this line
 }
 
 template <class Comparable>
 void PriorityQueue<Comparable>::percolateDown(std::vector<Comparable>& pq, int i) {
     Comparable temp = pq[i];
-    int c = 2 * i;
-    int n = size(pq) - 1;
+    auto c = 2 * i;  // left child
 
-    while (c <= n) {
-        if (c < n) {
-            if (pq[c + 1] < pq[c]) c++;
+    while (c < pq.size()) {
+        if (c < pq.size() - 1) {
+            if (pq[c + 1] < pq[c])  // largest child?
+                c++;
         }
+        // percolate down
         if (pq[c] < temp) {
             pq[i] = pq[c];
             i = c;
             c = 2 * i;
-        } else
+        } else {
             break;
+        }
     }
     pq[i] = temp;
 }
 
 template <class Comparable>
 void PriorityQueue<Comparable>::percolateUp(std::vector<Comparable>& pq, int i) {
-    Comparable temp = pq[i];
-    int parent = (i - 1) / 2;
+    int child = pq.size() - 1;
+    int parent = child / 2;
 
-    while (i > 0 && pq[parent] > temp) {
-        pq[i] = pq[parent];
-        i = parent;
-        parent = (i - 1) / 2;
+    while (parent > 0) {
+        if (pq[child] < pq[parent]) {
+            std::swap(pq[child], pq[parent]);
+            child = parent;
+            parent = child / 2;
+        } else
+            break;
     }
-    pq[i] = temp;
 }
