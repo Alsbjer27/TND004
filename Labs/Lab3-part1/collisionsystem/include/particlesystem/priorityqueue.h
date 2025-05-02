@@ -160,19 +160,22 @@ template <class Comparable>
 Comparable PriorityQueue<Comparable>::deleteMin() {
     assert(!isEmpty());  // Ensure the queue is not empty
 
-    Comparable minElement = pq[1];
+    Comparable minElement = std::move(pq[1]);
 
-    pq[1] = pq[pq.size() - 1];
+    pq[1] = pq.back();
     pq.pop_back();
 
+    if (!isEmpty()) {
+        percolateDown(pq, 1);  // Restore heap property
+    }
 
-    // Ensure the heap property is maintained
 #ifdef TEST_PRIORITY_QUEUE
     assert(isMinHeap());
 #endif
 
-    return minElement;  // Return the smallest element
+    return minElement;
 }
+
 
 
 /**
@@ -259,15 +262,12 @@ void PriorityQueue<Comparable>::percolateDown(std::vector<Comparable>& pq, int i
 
 template <class Comparable>
 void PriorityQueue<Comparable>::percolateUp(std::vector<Comparable>& pq, int i) {
-    int child = pq.size() - 1;
+    int child = i;
     int parent = child / 2;
 
-    while (parent > 0) {
-        if (pq[child] < pq[parent]) {
-            std::swap(pq[child], pq[parent]);
-            child = parent;
-            parent = child / 2;
-        } else
-            break;
+    while (parent > 0 && pq[child] < pq[parent]) {
+        std::swap(pq[child], pq[parent]);
+        child = parent;
+        parent = child / 2;
     }
 }
