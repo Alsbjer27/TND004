@@ -4,7 +4,7 @@
 #include <vector>
 #include <cassert>
 
-#define TEST_PRIORITY_QUEUE
+//#define TEST_PRIORITY_QUEUE
 
 /**
  * A heap based priority queue where the root is the smallest element -- min heap
@@ -186,7 +186,6 @@ void PriorityQueue<Comparable>::insert(const Comparable& x) {
     /*
      * ADD CODE HERE
      */
-
     pq.push_back(x);
     percolateUp(pq, pq.size() - 1);
     // Do not remove this code block
@@ -227,6 +226,7 @@ bool PriorityQueue<Comparable>::isMinHeap() const {
 
         bool isLeafL = (2 * i) > this->size();
         if (isLeafL) break;  // stops when first leaf is hit
+
         auto leftChild = 2 * i;
         if (pq[i] > pq[leftChild]) return false;
 
