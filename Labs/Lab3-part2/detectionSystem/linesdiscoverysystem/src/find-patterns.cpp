@@ -56,18 +56,22 @@ double calculateSlope(const Point& p, const Point& q) {
     long long dx = q.x_ - p.x_;
     long long dy = q.y_ - p.y_;
 
+    // If we are trying to compare points with the same values return -infinity
     if (dx == 0 && dy == 0) {
         return -std::numeric_limits<double>::infinity();
     }
 
+    // Only different y values
     if (dx == 0) {
         return std::numeric_limits<double>::infinity();
     }
 
+    // Only different x values
     if (dy == 0) {
         return 0.0;
     }
-                                                             
+                   
+    // The difference is a slope
     return static_cast<double>(dy) / static_cast<double>(dx);
 }
 
