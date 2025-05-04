@@ -104,6 +104,12 @@ double calculateSlope(const Point& p, const Point& q) {
     return static_cast<double>(dy) / static_cast<double>(dx);
 }
 
+void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
+    std::sort(points.begin(), points.end(), [&p](const Point& a, const Point& b) {
+        return calculateSlope(p, a) < calculateSlope(p, b);
+    });
+}
+
 // Function to check collinearity of 3 points (using cross-product, avoids floating-point issues)
 bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
     return (p2.y_ - p1.y_) * (p3.x_ - p1.x_) == (p3.y_ - p1.y_) * (p2.x_ - p1.x_);
@@ -226,6 +232,18 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
     if (points.empty()) {
         return;  // Exit if there was an error reading points
     }
+
+    std::vector<std::pair<Point, Point>> lineSegment;
+
+    Point p = points[0];
+
+    findCollinearPoints(points, p, lineSegment);
+
+    for (const auto& segment : lineSegment) {
+        std::cout << "Line Segment: " << segment.first.toString() << " ->" << segment.second.toString() << std::endl;
+    }
+
+    writeLineSegments(segmentsFile, lineSegment);
 }
 
 void analyseData(const std::string& name) {
@@ -233,4 +251,22 @@ void analyseData(const std::string& name) {
     std::filesystem::path segments_name = "segments-" + name;
 
     analyseData(data_dir / points_name, data_dir / "output" / segments_name);
+}
+
+void findCollinearPoints(std::vector<Point>& points, const Point& p, std::vector<std::pair<Point, Point>>& lineSegment) {
+    sortPointsBySlope(points, p);
+
+    size_t start = 0;
+    while (start < points.size()) {
+        size_t end = start + 1;
+
+        while (end < points.size() && calculateSlope(p, points[start]) == calculateSlope(p, points[end])) {
+            ++end;
+        }
+        if (end - start >= 3) {
+            lineSegment.push_back({p, points[start]});
+            lineSegment.push_back({p, points[end - 1]});
+        }
+        start = end;
+    }
 }
