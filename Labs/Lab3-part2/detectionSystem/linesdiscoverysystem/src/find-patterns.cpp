@@ -3,6 +3,7 @@
 #include <compare>
 #include <fstream>
 #include <filesystem>
+#include <format>
 
 #include <find-patterns.hpp>
 
@@ -51,13 +52,47 @@ int main() {
 
 /* ***************************************************** */
 
-void analyseData(const std::filesystem::path& pointsFile,
-                 const std::filesystem::path& segmentsFile) {
+double calculateSlope(const Point& p, const Point& q) {
+    long long dx = q.x_ - p.x_;
+    long long dy = q.y_ - p.y_;
+
+    if (dx == 0 && dy == 0) {
+        return -std::numeric_limits<double>::infinity();
+    }
+
+    if (dx == 0) {
+        return std::numeric_limits<double>::infinity();
+    }
+
+    if (dy == 0) {
+        return 0.0;
+    }
+                                                             
+    return static_cast<double>(dy) / static_cast<double>(dx);
+}
+
+void analyseData(const std::filesystem::path& pointsFile, const std::filesystem::path& segmentsFile) {
     /*
      * Add code here
      * Feel free to modify the function signature
      * Break your code into small functions
      */
+    std::ifstream pointsInStream(pointsFile);
+    if (!pointsInStream) {
+        std::cerr << "Cannot open points file: " << pointsFile << "\n";
+        return;
+    }
+
+    int n;
+    pointsInStream >> n;
+    std::vector<Point> points;
+    points.reserve(n);                  // O(n) -> worst case
+                                            
+    for (int i = 0; i < n; i++) {       // O(n)
+        long long x, y;
+        pointsInStream >> x >> y;
+        points.push_back(Point{x, y});
+    }
 }
 
 void analyseData(const std::string& name) {
