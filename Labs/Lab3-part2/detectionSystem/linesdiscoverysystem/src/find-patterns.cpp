@@ -59,6 +59,7 @@ int main() {
 // Function to read points from the input file
 std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath) {
     std::ifstream pointsFileStream(pointsFilePath);
+
     if (!pointsFileStream) {
         std::cout << "Points file path error" << std::endl;
         return {};
@@ -66,6 +67,7 @@ std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath) {
 
     int n_points{0};
     pointsFileStream >> n_points;
+
     if (n_points < minPoints) {
         std::cout << std::format(
             "Not enough points, in order to find patterns, a minimum of {} points are required",
