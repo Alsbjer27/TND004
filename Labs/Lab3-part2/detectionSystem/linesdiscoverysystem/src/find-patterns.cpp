@@ -110,6 +110,22 @@ void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
     });
 }
 
+void findCollinearPoints(const Point& p, const std::vector<Point>& points, std::set<std::pair<Point, Point>>& lineSegments) {
+    // Find collinear points and store the line segments
+    for (size_t i = 0; i < points.size() - 1; ++i) {
+        if (p == points[i]) continue;  // Skip the current point
+
+        double slope1 = calculateSlope(p, points[i]);
+        double slope2 = calculateSlope(p, points[i + 1]);
+
+        if (slope1 == slope2) {
+            // Ensure consistent ordering of point pairs
+            lineSegments.insert({std::min(p, points[i]), std::max(p, points[i])});
+            lineSegments.insert({std::min(p, points[i + 1]), std::max(p, points[i + 1])});
+        }
+    }
+}
+
 void writeSegmentsFile(const std::filesystem::path& filePath, const std::set<std::pair<Point, Point>>& segments) {
     // Open the output file for writing
     std::ofstream outFile(filePath);
@@ -121,7 +137,7 @@ void writeSegmentsFile(const std::filesystem::path& filePath, const std::set<std
     // Write each segment to the file
     for (const auto& seg : segments) {
         // Output format: x1 y1 x2 y2 (start point, end point)
-        outFile << seg.first.toString() << " -> " << seg.second.toString() << "\n";
+        outFile << seg.first.toString() << "->" << seg.second.toString() << "\n";
     }
 
     std::cout << "Segments file written to: " << filePath << std::endl;
@@ -144,25 +160,11 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
     // Create a set to store unique line segments
     std::set<std::pair<Point, Point>> lineSegments;
 
-    // 1. and 2. Sort points by slope
+    // 1. 2. 3. Sort points by slope and find collinear
     for (const Point& p : points) {
-        std::vector<Point> other_points = points;
+        sortPointsBySlope(points, p);
 
-        sortPointsBySlope(other_points, p);
-
-        // Find collinear points and store the line segments
-        for (size_t i = 0; i < other_points.size() - 1; ++i) {
-            if (p == other_points[i]) continue;  // Skip the current point
-
-            double slope1 = calculateSlope(p, other_points[i]);
-            double slope2 = calculateSlope(p, other_points[i + 1]);
-
-            if (slope1 == slope2) {
-                // Ensure consistent ordering of point pairs
-                lineSegments.insert({std::min(p, other_points[i]), std::max(p, other_points[i])});
-                lineSegments.insert({std::min(p, other_points[i + 1]), std::max(p, other_points[i + 1])});
-            }
-        }
+        findCollinearPoints(p, points, lineSegments);
     }
 
     // Write the unique line segments to the output file
