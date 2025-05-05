@@ -35,20 +35,6 @@ public:
 
     long long x_;
     long long y_;
-
-private:
-    // Function to calculate the slope between two points.
-    double calculateSlope(const Point& q) const {
-        if (x_ == q.x_ && y_ == q.y_) {
-            return -std::numeric_limits<double>::infinity();  // Handle identical points
-        }
-
-        if (x_ == q.x_) {
-            return std::numeric_limits<double>::infinity();  // Handle vertical line
-        }
-
-        return static_cast<double>(q.y_ - y_) / static_cast<double>(q.x_ - x_);
-    }
 };
 
 /* ***************************************************** */
@@ -98,21 +84,21 @@ std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath) {
     return points;
 }
 
-bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
-    return ((p2.y_ - p1.y_) * (p3.x_ - p1.x_)) == ((p3.y_ - p1.y_) * (p2.x_ - p1.x_));
+// Function to calculate the slope between two points.
+double calculateSlope(const Point& p, const Point& q) {
+    if (p.x_ == q.x_ && p.y_ == q.y_) {
+        return -std::numeric_limits<double>::infinity();  // Handle identical points
+    }
+
+    if (p.x_ == q.x_) {
+        return std::numeric_limits<double>::infinity();  // Handle vertical line
+    }
+
+    return static_cast<double>(q.y_ - p.y_) / static_cast<double>(q.x_ - p.x_);
 }
 
-// Function to write line segments to the output file
-void writeSegmentFile(const std::filesystem::path& filePath, const std::vector<std::pair<Point, Point>>& segments) {
-    std::ofstream segmentsFileStream(filePath);
-    if (!segmentsFileStream) {
-        std::cout << std::format("Segments file path error: ", filePath) << std::endl;
-        return;
-    }
-
-    for (const auto& segment : segments) {
-        segmentsFileStream << std::format("{} {}",segment.first.cordOutputString(), segment.second.cordOutputString()) << std::endl;
-    }
+bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
+    return ((p2.y_ - p1.y_) * (p3.x_ - p1.x_)) == ((p3.y_ - p1.y_) * (p2.x_ - p1.x_));
 }
 
 void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
@@ -121,122 +107,23 @@ void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
     });
 }
 
-bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
-    return (p2.y_ - p1.y_) * (p3.x_ - p1.x_) == (p3.y_ - p1.y_) * (p2.x_ - p1.x_);
-}
-
-// Function to check collinearity of 3 points (using cross-product, avoids floating-point issues
-void writeCollinearPoints(const std::filesystem::path& filePath, const std::vector<std::vector<Point>>& allCollinearPoints) {
-    std::ofstream collinearFileStream(filePath);
-    if (!collinearFileStream) {
-        std::cout << std::format("Collinear points file path error: {}", filePath) << std::endl;
-        return;
-    }
-
-    for (const auto& points : allCollinearPoints) {
-        for (size_t i = 0; i < points.size(); ++i) {
-            collinearFileStream << points[i].toString();
-            if (i < points.size() - 1) {
-                collinearFileStream << "->";
-            }
-        }
-        collinearFileStream << std::endl;
-    }
-}
-
-// Function to find line segments
-std::vector<std::pair<Point, Point>> findLineSegments(const std::vector<Point>& points, std::vector<std::vector<Point>>& allCollinearPoints) {
-    std::vector<std::pair<Point, Point>> segments;
-    allCollinearPoints.clear();  // Clear previous results
-    if (points.size() < minPoints) {
-        return segments;  // Not enough points to form a line
-    }
-
-    for (size_t i = 0; i < points.size(); ++i) {
-        std::map<double, std::vector<size_t>> slopeMap;  // Map to group points by slope
-        for (size_t j = 0; j < points.size(); ++j) {
-            if (i != j) {
-                slopeMap[calculateSlope(points[i], points[j])].push_back(j);
-            }
-        }
-
-        for (const auto& [slope, indices] : slopeMap) {
-            if (indices.size() >= minPoints - 1) {  // At least 3 other points (plus the base point)
-                std::vector<Point> collinearPoints = {points[i]};
-                for (size_t idx : indices) {
-                    collinearPoints.push_back(points[idx]);
-                }
-                std::sort(collinearPoints.begin(),
-                          collinearPoints.end());  // Sort collinear points [cite: 57]
-                segments.push_back({collinearPoints.front(), collinearPoints.back()});
-                allCollinearPoints.push_back(collinearPoints);
-            }
-        }
-    }
-
-    return segments;
-}
-
-// Function to remove redundant line segments
-std::vector<std::pair<Point, Point>> filterRedundantSegments(
-    const std::vector<std::pair<Point, Point>>& segments) {
-    std::vector<std::pair<Point, Point>> filteredSegments;
-    std::set<std::pair<Point, Point>> segmentSet;
-
-    auto toCanonical = [](Point p1, Point p2) {  // Ensure consistent ordering within a segment
-        return (p1 <= p2) ? std::make_pair(p1, p2) : std::make_pair(p2, p1);
-    };
-
-    for (const auto& seg : segments) {
-        if (segmentSet.find(toCanonical(seg.first, seg.second)) ==
-            segmentSet.end()) {  // Avoid duplicates [cite: 60]
-            bool isSubsegment = false;
-            for (const auto& existingSeg : segmentSet) {
-                if (areCollinear(seg.first, seg.second, existingSeg.first) &&
-                    areCollinear(seg.first, seg.second,
-                                 existingSeg.second)) {  // Check if subsegment [cite: 61]
-                    std::vector<Point> allPoints = {seg.first, seg.second, existingSeg.first,
-                                                    existingSeg.second};
-                    std::sort(allPoints.begin(), allPoints.end());
-                    if ((allPoints.front() == seg.first || allPoints.front() == seg.second) &&
-                        (allPoints.back() == seg.first || allPoints.back() == seg.second) &&
-                        (seg.first != existingSeg.first || seg.second != existingSeg.second)) {
-                        isSubsegment = true;
-                        break;
-                    }
-                }
-            }
-            if (!isSubsegment) {
-                filteredSegments.push_back(seg);
-                segmentSet.insert(toCanonical(seg.first, seg.second));
-            }
-        }
-    }
-    return filteredSegments;
-}
-
 void analyseData(const std::filesystem::path& pointsFile, const std::filesystem::path& segmentsFile) {
     /*
      * Add code here
      * Feel free to modify the function signature
      * Break your code into small functions
      */
+    
+    // Read points from the input file
     std::vector<Point> points = readPoints(pointsFile);
     if (points.empty()) {
         return;  // Exit if there was an error reading points
     }
 
-    std::vector<std::pair<Point, Point>> lineSegment;
-
-    Point p = points[0];
-
-    findCollinearPoints(points, p, lineSegment);
-
-    for (const auto& segment : lineSegment) {
-        std::cout << "Line Segment: " << segment.first.toString() << " ->" << segment.second.toString() << std::endl;
+    // 1. and 2. Sort points by slope
+    for (const Point& p : points) {
+        sortPointsBySlope(points, p);
     }
-
-    writeLineSegments(segmentsFile, lineSegment);
 }
 
 void analyseData(const std::string& name) {
