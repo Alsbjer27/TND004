@@ -49,7 +49,7 @@ int main() {
 
 /* ***************************************************** */
 
-// Function to read points from the input file
+// Function to read points from the input file: O(n * log n) -> O(n) + O(n log n)
 std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath) {
     std::ifstream pointsFileStream(pointsFilePath);
 
@@ -84,7 +84,7 @@ std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath) {
     return points;
 }
 
-// Function to calculate the slope between two points.
+// Function to calculate the slope between two points: O(1)
 double calculateSlope(const Point& p, const Point& q) {
     if (p.x_ == q.x_ && p.y_ == q.y_) {
         return -std::numeric_limits<double>::infinity();  // Handle identical points
@@ -97,16 +97,19 @@ double calculateSlope(const Point& p, const Point& q) {
     return static_cast<double>(q.y_ - p.y_) / static_cast<double>(q.x_ - p.x_);
 }
 
+// Calculate if 3 points are collinear: O(1)
 bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
     return ((p2.y_ - p1.y_) * (p3.x_ - p1.x_)) == ((p3.y_ - p1.y_) * (p2.x_ - p1.x_));
 }
 
+// Sort by slope: O(n log n)
 void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
     std::sort(points.begin(), points.end(), [&p](const Point& a, const Point& b) {
         return calculateSlope(p, a) < calculateSlope(p, b);
     });
 }
 
+// O(n^2 log n) -> O(n) * O(n log n)
 void analyseData(const std::filesystem::path& pointsFile, const std::filesystem::path& segmentsFile) {
     /*
      * Add code here
