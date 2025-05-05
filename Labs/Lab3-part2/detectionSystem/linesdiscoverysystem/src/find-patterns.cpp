@@ -115,6 +115,17 @@ void writeSegmentFile(const std::filesystem::path& filePath, const std::vector<s
     }
 }
 
+void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
+    std::sort(points.begin(), points.end(), [&p](const Point& a, const Point& b) {
+        return calculateSlope(p, a) < calculateSlope(p, b);
+    });
+}
+
+bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
+    return (p2.y_ - p1.y_) * (p3.x_ - p1.x_) == (p3.y_ - p1.y_) * (p2.x_ - p1.x_);
+}
+
+// Function to check collinearity of 3 points (using cross-product, avoids floating-point issues
 void writeCollinearPoints(const std::filesystem::path& filePath, const std::vector<std::vector<Point>>& allCollinearPoints) {
     std::ofstream collinearFileStream(filePath);
     if (!collinearFileStream) {
@@ -215,20 +226,17 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
         return;  // Exit if there was an error reading points
     }
 
-    int n = points.size();
+    std::vector<std::pair<Point, Point>> lineSegment;
 
-    // Store pairs of <min_point, max_point> for the simple output
-    std::set<std::pair<Point, Point>> found_segments_simple;
-    // Store sorted vectors of points for the detailed output
-    std::set<std::vector<Point>> found_segments_detailed;
+    Point p = points[0];
 
-    // Auxiliary vector to hold points for sorting relative to p
-    std::vector<Point> other_points;
-    other_points.reserve(n);  // Reserve space
+    findCollinearPoints(points, p, lineSegment);
 
-    for (int i = 0; i < n; i++) {
-
+    for (const auto& segment : lineSegment) {
+        std::cout << "Line Segment: " << segment.first.toString() << " ->" << segment.second.toString() << std::endl;
     }
+
+    writeLineSegments(segmentsFile, lineSegment);
 }
 
 void analyseData(const std::string& name) {
@@ -236,4 +244,22 @@ void analyseData(const std::string& name) {
     std::filesystem::path segments_name = "segments-" + name;
 
     analyseData(data_dir / points_name, data_dir / "output" / segments_name);
+}
+
+void findCollinearPoints(std::vector<Point>& points, const Point& p, std::vector<std::pair<Point, Point>>& lineSegment) {
+    sortPointsBySlope(points, p);
+
+    size_t start = 0;
+    while (start < points.size()) {
+        size_t end = start + 1;
+
+        while (end < points.size() && calculateSlope(p, points[start]) == calculateSlope(p, points[end])) {
+            ++end;
+        }
+        if (end - start >= 3) {
+            lineSegment.push_back({p, points[start]});
+            lineSegment.push_back({p, points[end - 1]});
+        }
+        start = end;
+    }
 }
