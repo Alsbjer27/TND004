@@ -135,21 +135,3 @@ void analyseData(const std::string& name) {
 
     analyseData(data_dir / points_name, data_dir / "output" / segments_name);
 }
-
-void findCollinearPoints(std::vector<Point>& points, const Point& p, std::vector<std::pair<Point, Point>>& lineSegment) {
-    sortPointsBySlope(points, p);
-
-    size_t start = 0;
-    while (start < points.size()) {
-        size_t end = start + 1;
-
-        while (end < points.size() && calculateSlope(p, points[start]) == calculateSlope(p, points[end])) {
-            ++end;
-        }
-        if (end - start >= 3) {
-            lineSegment.push_back({p, points[start]});
-            lineSegment.push_back({p, points[end - 1]});
-        }
-        start = end;
-    }
-}
