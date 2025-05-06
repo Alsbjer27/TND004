@@ -50,6 +50,7 @@ void writeSegmentsFile(const std::filesystem::path& segmentsFile,
 
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
                          std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
+                         std::vector<Point>& collinearGroup,
                          std::ofstream& detailedSegmentsStream);
 
 void writeSegmentsFile(const std::filesystem::path& segmentsFile,
@@ -83,7 +84,11 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
 
     // Create a set to store unique line segments
     std::set<std::vector<Point>> lineSegments;
+
     std::vector<Point> other_points = points;
+
+    std::vector<Point> collinearGroup;
+    collinearGroup.reserve(other_points.size());  // Reserve space for efficiency
 
     std::set<std::pair<Point, Point>> uniqueSegmentEndpoints; 
 
@@ -102,10 +107,12 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
 
         // Vector sorted by slope (-inf -> inf)
         
-        //findCollinearPoints(p, other_points, lineSegments);
+        //findCollinearPoints(p, other_points, lineSegments, collinearGroup);
 
-        findCollinearPoints(p, other_points, uniqueSegmentEndpoints, detailedSegmentsStream);
+        findCollinearPoints(p, other_points, uniqueSegmentEndpoints, collinearGroup, detailedSegmentsStream);
     }
+
+    detailedSegmentsStream.close();
 
     // Write the unique line segments to the output file
     //writeSegmentsFile(segmentsFile, segmentsFileDetailed, lineSegments);
@@ -190,10 +197,10 @@ void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
     });
 }
 
-void findCollinearPoints(const Point& p, const std::vector<Point>& other_points, std::set<std::vector<Point>>& lineSegments) {
-    std::vector<Point> collinearGroup;
+void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
+                         std::set<std::vector<Point>>& lineSegments,
+                         std::vector<Point>& collinearGroup) {
     double prevSlope = std::numeric_limits<double>::quiet_NaN();
-    collinearGroup.reserve(other_points.size());
     // Reserve för collinear -> Skippar att loopen blir O(n^2) -> reserve other_points.size() ifall alla ligger på samma linje?
     // Ta bort / Flytta ut sort
     // Ändra så att man inte kör insert här??
@@ -271,11 +278,9 @@ void writeSegmentsFile(const std::filesystem::path& segmentsFile, const std::fil
 
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
                          std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
+                         std::vector<Point>& collinearGroup,
                          std::ofstream& detailedSegmentsStream) {
-
-    std::vector<Point> collinearGroup;
     double prevSlope = std::numeric_limits<double>::quiet_NaN();
-    collinearGroup.reserve(other_points.size());  // Reserve space for efficiency
 
     // Iterate through points sorted by slope relative to p
     // O(N) iterations
