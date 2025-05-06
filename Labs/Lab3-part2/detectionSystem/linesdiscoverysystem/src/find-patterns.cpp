@@ -7,7 +7,6 @@
 #include <find-patterns.hpp>
 
 /* **************** Added includes ********************* */
-#include <map>
 #include <set>
 /* ***************************************************** */
 
