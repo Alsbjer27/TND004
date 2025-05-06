@@ -308,8 +308,7 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
 
                     // Check if this segment (identified by endpoints) is already in the set
                     // O(log S) where S <= O(N^2). Pair comparison is O(1). Total O(log N).
-                    if (uniqueSegmentEndpoints.find(segmentEndpoints) ==
-                        uniqueSegmentEndpoints.end()) {
+                    if (uniqueSegmentEndpoints.find(segmentEndpoints) == uniqueSegmentEndpoints.end()) {
                         // This is a new unique maximal segment. Insert its endpoints.
                         uniqueSegmentEndpoints.insert(segmentEndpoints);  // O(log N)
 
