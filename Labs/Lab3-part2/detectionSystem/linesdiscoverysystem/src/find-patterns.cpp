@@ -79,13 +79,6 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
         sortPointsBySlope(other_points, p);
 
         // Vector sorted by slope (-inf -> inf)
-        for (const Point& q : other_points) {
-            std::cout << p.toString() << " " << q.toString() << " " << calculateSlope(p, q)
-                      << std::endl;
-        }
-
-        std::cout << std::endl << std::endl;
-
         findCollinearPoints(p, other_points, lineSegments);
     }
 
