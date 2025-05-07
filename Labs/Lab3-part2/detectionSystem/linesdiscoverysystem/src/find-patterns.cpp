@@ -37,15 +37,19 @@ public:
 };
 
 std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath);
-double calculateSlope(const Point& p, const Point& q);
-bool areCollinear(const Point& p1, const Point& p2, const Point& p3);
-void sortPointsBySlope(std::vector<Point>& points, const Point& p);
-void findCollinearPoints(const Point& p, const std::vector<Point>& points, std::set<std::vector<Point>>& lineSegments);
-void writeSegmentsFile(const std::filesystem::path& segmentsFile,
-                       const std::filesystem::path& segmentsFileDetailed,
-                       const std::set<std::vector<Point>>& segments);
 
-/* ***** Not sure if this approach is O(N^2 log N) ***** */
+double calculateSlope(const Point& p, const Point& q);
+
+//bool areCollinear(const Point& p1, const Point& p2, const Point& p3);
+
+//void findCollinearPoints(const Point& p, const std::vector<Point>& points,
+//                         std::set<std::vector<Point>>& lineSegments);
+//
+//void writeSegmentsFile(const std::filesystem::path& segmentsFile,
+//                       const std::filesystem::path& segmentsFileDetailed,
+//                       const std::set<std::vector<Point>>& segments);
+
+void sortPointsBySlope(std::vector<Point>& points, const Point& p);
 
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
                          std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
@@ -55,7 +59,6 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
 void writeSegmentsFile(const std::filesystem::path& segmentsFile,
                        const std::set<std::pair<Point, Point>>& segments);
 
-/* ***************************************************** */
 
 int main() {
     std::cout << "Enter the name of input points file: ";
@@ -75,28 +78,26 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
      * Break your code into small functions
      */
 
-    // Read points from the input file
+    // Read points from the input file: O(N log N)
     std::vector<Point> points = readPoints(pointsFile);
     if (points.empty()) {
         return;  // Exit if there was an error reading points
     }
 
-    // Create a set to store unique line segments
-    std::set<std::vector<Point>> lineSegments;
+    //std::set<std::vector<Point>> lineSegments;
 
-    std::vector<Point> other_points = points;
+    std::vector<Point> other_points = points; // Copy constructor call
 
     std::vector<Point> collinearGroup;
     collinearGroup.reserve(other_points.size());  // Reserve space for efficiency
 
+    // Set to store to all segments (start and endpoint)
     std::set<std::pair<Point, Point>> uniqueSegmentEndpoints; 
 
     // Open the detailed segments file for writing progressively
     std::ofstream detailedSegmentsStream(segmentsFileDetailed);
     if (!detailedSegmentsStream) {
-        std::cerr << "Error: Cannot open detailed segments output file: " << segmentsFileDetailed
-                  << std::endl;
-        // Handle error appropriately
+        std::cerr << "Error: Cannot open detailed segments output file: " << segmentsFileDetailed << std::endl;
         return;
     }
 
@@ -184,95 +185,11 @@ double calculateSlope(const Point& p, const Point& q) {
     return static_cast<double>(q.y_ - p.y_) / static_cast<double>(q.x_ - p.x_);
 }
 
-// Calculate if 3 points are collinear: O(1)
-bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
-    return ((p2.y_ - p1.y_) * (p3.x_ - p1.x_)) == ((p3.y_ - p1.y_) * (p2.x_ - p1.x_));
-}
-
 // Sort by slope: O(n log n)
 void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
-    std::sort(points.begin(), points.end(), [&p](const Point& a, const Point& b) {
+    std::stable_sort(points.begin(), points.end(), [&p](const Point& a, const Point& b) {
         return calculateSlope(p, a) < calculateSlope(p, b);
     });
-}
-
-void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
-                         std::set<std::vector<Point>>& lineSegments,
-                         std::vector<Point>& collinearGroup) {
-    double prevSlope = std::numeric_limits<double>::quiet_NaN();
-    // Reserve för collinear -> Skippar att loopen blir O(n^2) -> reserve other_points.size() ifall alla ligger på samma linje?
-    // Ta bort / Flytta ut sort
-    // Ändra så att man inte kör insert här??
-
-    for (const Point& q: other_points) {
-        if (p == q) continue;
-
-        double slope = calculateSlope(p, q);
-
-        if (collinearGroup.empty() || slope == prevSlope) {
-            collinearGroup.push_back(q);
-        } else {
-            if (collinearGroup.size() >= minPoints - 1) {
-                collinearGroup.push_back(p);
-                std::sort(collinearGroup.begin(), collinearGroup.end());
-
-                // Undvik att samma sekvens upptäcks från flera punkter
-                if (p == collinearGroup[0]) {
-                    lineSegments.insert(collinearGroup);
-                }
-            }
-            collinearGroup = {q};
-        }
-
-        prevSlope = slope;
-    }
-
-    // Kontrollera sista gruppen också
-    if (collinearGroup.size() >= minPoints - 1) {
-        collinearGroup.push_back(p);
-        std::sort(collinearGroup.begin(), collinearGroup.end());
-
-        if (p == collinearGroup[0]) {
-            lineSegments.insert(collinearGroup);
-        }
-    }
-}
-
-void writeSegmentsFile(const std::filesystem::path& segmentsFile, const std::filesystem::path& segmentsFileDetailed, const std::set<std::vector<Point>>& segments) {
-    std::ofstream outFile(segmentsFile);
-    std::ofstream outFileDetailed(segmentsFileDetailed);
-    
-    if (!outFile) {
-        std::cerr << "Error: Cannot open segments output file: " << segmentsFile << std::endl;
-        return;
-    }
-
-    if (!outFileDetailed) {
-        std::cerr << "Error: Cannot open detailed segments output file: " << segmentsFileDetailed << std::endl;
-        return;
-    }
-
-    // Segment file writing
-    for (const auto& segment : segments) {
-        outFile << segment[0].cordOutputString() << " " << segment.back().cordOutputString();
-        outFile << "\n";
-    }
-
-    outFile.close();
-
-    // Detailed file writing
-    for (const auto& segment : segments) {
-        for (size_t i = 0; i < segment.size(); ++i) {
-            outFileDetailed << segment[i].toString();
-            if (i != segment.size() - 1) outFileDetailed << "->";
-        }
-        outFileDetailed << "\n";
-    }
-
-    outFileDetailed.close();
-
-    std::cout << "Segments file written to: " << segmentsFile << std::endl;
-    std::cout << "Detailed segments file written to: " << segmentsFileDetailed << std::endl;
 }
 
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
@@ -283,9 +200,8 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
 
     // Iterate through points sorted by slope relative to p
     // O(N) iterations
-    for (const Point& q: other_points) {
-        // If p == q, skip. This should ideally be handled by iterating
-        // through points other than p, but keeping this check is safe.
+    for (const Point& q : other_points) {
+        // If p == q, skip.
         if (p == q) continue;
 
         double slope = calculateSlope(p, q);
@@ -312,13 +228,13 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
 
                     // Check if this segment (identified by endpoints) is already in the set
                     // O(log S) where S <= O(N^2). Pair comparison is O(1). Total O(log N).
-                    if (uniqueSegmentEndpoints.find(segmentEndpoints) == uniqueSegmentEndpoints.end()) {
+                    if (uniqueSegmentEndpoints.find(segmentEndpoints) ==
+                        uniqueSegmentEndpoints.end()) {
                         // This is a new unique maximal segment. Insert its endpoints.
                         uniqueSegmentEndpoints.insert(segmentEndpoints);  // O(log N)
 
                         // Write the detailed information for this new segment immediately
                         // O(k) where k is group size (<= N). Total writing over all unique segments
-                        // O(N^2).
                         for (size_t j = 0; j < collinearGroup.size(); ++j) {
                             detailedSegmentsStream << collinearGroup[j].toString();
                             if (j != collinearGroup.size() - 1) detailedSegmentsStream << "->";
@@ -356,7 +272,8 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
 }
 
 // Modified writeSegmentsFile to output endpoint pairs
-void writeSegmentsFile(const std::filesystem::path& segmentsFile, const std::set<std::pair<Point, Point>>& segments) {
+void writeSegmentsFile(const std::filesystem::path& segmentsFile,
+                       const std::set<std::pair<Point, Point>>& segments) {
     std::ofstream outFile(segmentsFile);
 
     if (!outFile) {
@@ -375,3 +292,84 @@ void writeSegmentsFile(const std::filesystem::path& segmentsFile, const std::set
     std::cout << "Segments file written to: " << segmentsFile << std::endl;
     // Detailed file is already written progressively
 }
+
+// Calculate if 3 points are collinear: O(1)
+// bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
+//    return ((p2.y_ - p1.y_) * (p3.x_ - p1.x_)) == ((p3.y_ - p1.y_) * (p2.x_ - p1.x_));
+//}
+
+//void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
+//                         std::set<std::vector<Point>>& lineSegments,
+//                         std::vector<Point>& collinearGroup) {
+//    double prevSlope = std::numeric_limits<double>::quiet_NaN();
+//
+//    for (const Point& q: other_points) {
+//        if (p == q) continue;
+//
+//        double slope = calculateSlope(p, q);
+//
+//        if (collinearGroup.empty() || slope == prevSlope) {
+//            collinearGroup.push_back(q);
+//        } else {
+//            if (collinearGroup.size() >= minPoints - 1) {
+//                collinearGroup.push_back(p);
+//                std::sort(collinearGroup.begin(), collinearGroup.end());
+//
+//                // Undvik att samma sekvens upptäcks från flera punkter
+//                if (p == collinearGroup[0]) {
+//                    lineSegments.insert(collinearGroup);
+//                }
+//            }
+//            collinearGroup = {q};
+//        }
+//
+//        prevSlope = slope;
+//    }
+//
+//    // Kontrollera sista gruppen också
+//    if (collinearGroup.size() >= minPoints - 1) {
+//        collinearGroup.push_back(p);
+//        std::sort(collinearGroup.begin(), collinearGroup.end());
+//
+//        if (p == collinearGroup[0]) {
+//            lineSegments.insert(collinearGroup);
+//        }
+//    }
+//}
+//
+//void writeSegmentsFile(const std::filesystem::path& segmentsFile, const std::filesystem::path& segmentsFileDetailed, const std::set<std::vector<Point>>& segments) {
+//    std::ofstream outFile(segmentsFile);
+//    std::ofstream outFileDetailed(segmentsFileDetailed);
+//    
+//    if (!outFile) {
+//        std::cerr << "Error: Cannot open segments output file: " << segmentsFile << std::endl;
+//        return;
+//    }
+//
+//    if (!outFileDetailed) {
+//        std::cerr << "Error: Cannot open detailed segments output file: " << segmentsFileDetailed << std::endl;
+//        return;
+//    }
+//
+//    // Segment file writing
+//    for (const auto& segment : segments) {
+//        outFile << segment[0].cordOutputString() << " " << segment.back().cordOutputString();
+//        outFile << "\n";
+//    }
+//
+//    outFile.close();
+//
+//    // Detailed file writing
+//    for (const auto& segment : segments) {
+//        for (size_t i = 0; i < segment.size(); ++i) {
+//            outFileDetailed << segment[i].toString();
+//            if (i != segment.size() - 1) outFileDetailed << "->";
+//        }
+//        outFileDetailed << "\n";
+//    }
+//
+//    outFileDetailed.close();
+//
+//    std::cout << "Segments file written to: " << segmentsFile << std::endl;
+//    std::cout << "Detailed segments file written to: " << segmentsFileDetailed << std::endl;
+//}
