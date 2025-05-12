@@ -6,16 +6,13 @@
 
 #include <find-patterns.hpp>
 
-/* **************** Added includes ********************* */
-#include <map>
-#include <set>
-/* ***************************************************** */
-
+#include <unordered_set>
+#include <sstream>
 const std::filesystem::path data_dir{DATA_DIR};
 
 constexpr int minPoints = 4;
 
-struct Point { // feel free to modify
+struct Point {
 public:
     Point(int x = 0, int y = 0) : x_{x}, y_{y} {}
 
@@ -23,15 +20,22 @@ public:
 
     // Compare by y-coordinates and break ties by x-coordinates
     std::strong_ordering operator<=>(Point p) const {
-        if (y_ < p.y_) { return std::strong_ordering::less; }
-        if (y_ > p.y_) { return std::strong_ordering::greater; }
-        if (x_ < p.x_) { return std::strong_ordering::less; }
-        if (x_ > p.x_) { return std::strong_ordering::greater; }
+        if (y_ < p.y_) {
+            return std::strong_ordering::less;
+        }
+        if (y_ > p.y_) {
+            return std::strong_ordering::greater;
+        }
+        if (x_ < p.x_) {
+            return std::strong_ordering::less;
+        }
+        if (x_ > p.x_) {
+            return std::strong_ordering::greater;
+        }
         return std::strong_ordering::equivalent;
     }
 
     std::string toString() const { return std::format("({},{})", x_, y_); }
-    std::string cordOutputString() const { return std::format("{} {}", x_, y_); }
 
     long long x_;
     long long y_;
@@ -48,132 +52,120 @@ int main() {
 }
 
 /* ***************************************************** */
+using Segment = std::vector<Point>;  // Ett segment är en lista med punkter
 
-// Function to read points from the input file: O(n * log n) -> O(n) + O(n log n)
-std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath) {
-    std::ifstream pointsFileStream(pointsFilePath);
+// Kontrollera om segment a är en delmängd av segment b
+bool isSubsegment(const Segment& a, const Segment& b) {
+    if (a.size() >= b.size())
+        return false;  // a kan inte vara en delmängd om det är lika stort eller större
+    return std::includes(b.begin(), b.end(), a.begin(),
+                         a.end());  // true om alla punkter i a finns i b i ordning
+}
 
-    if (!pointsFileStream) {
-        std::cout << "Points file path error" << std::endl;
-        return {};
+void analyseData(const std::filesystem::path& pointsFile,
+                 const std::filesystem::path& segmentsFile) {
+    std::ifstream input(pointsFile);  // Öppna filen med punkter
+    if (!input) {
+        std::cerr << "Could not open file: " << pointsFile << "\n";
+        return;
     }
 
-    int n_points{0};
-    pointsFileStream >> n_points;
-
-    if (n_points < minPoints) {
-        std::cout << std::format(
-            "Not enough points, in order to find patterns, a minimum of {} points are required",
-            minPoints) << std::endl;
-        return {};
-    }
-
+    int n;
+    input >> n;  // Läs antal punkter
     std::vector<Point> points;
-    points.reserve(n_points);
-
-    for (int i = 0; i < n_points; ++i) {
+    for (int i = 0; i < n; ++i) {
         int x, y;
-        pointsFileStream >> x >> y;
-        points.push_back(Point{x, y});
+        input >> x >> y;
+        points.emplace_back(x, y);  // Lägg till punkt i listan
     }
 
-    pointsFileStream.close();
+    std::sort(points.begin(), points.end());  // Sortera punkterna
 
-    // Sorting using the spaceship operator (sorted by y cord, then x if y is equal)
-    std::sort(points.begin(), points.end());
+    // Skapa utdatafiler för segment och detaljer
+    std::filesystem::create_directory(segmentsFile.parent_path() / "details");
+    std::ofstream segmentsOut(segmentsFile);
+    std::ofstream detailsOut(segmentsFile.parent_path() / "details" / segmentsFile.filename());
 
-    return points;
-}
+    // Lambda-funktion för att räkna lutning mellan två punkter
+    auto slope = [](const Point& a, const Point& b) -> double {
+        return (b.x_ == a.x_) ? std::numeric_limits<double>::infinity()
+                              : static_cast<double>(b.y_ - a.y_) / (b.x_ - a.x_);
+    };
 
-// Function to calculate the slope between two points: O(1)
-double calculateSlope(const Point& p, const Point& q) {
-    if (p.x_ == q.x_ && p.y_ == q.y_) {
-        return -std::numeric_limits<double>::infinity();  // Handle identical points
-    }
+    std::vector<Segment> candidates;            // Möjliga segment
+    std::unordered_set<std::string> seen_keys;  // Unika nycklar för att undvika dubbletter
 
-    if (p.x_ == q.x_) {
-        return std::numeric_limits<double>::infinity();  // Handle vertical line
-    }
+    // Gå igenom varje punkt som startpunkt
+    for (size_t i = 0; i < points.size(); ++i) {
+        const Point& origin = points[i];
+        std::vector<std::pair<double, Point>> slopes;
 
-    return static_cast<double>(q.y_ - p.y_) / static_cast<double>(q.x_ - p.x_);
-}
+        // Räkna lutningar till alla andra punkter
+        for (size_t j = 0; j < points.size(); ++j) {
+            if (i != j) {
+                slopes.emplace_back(slope(origin, points[j]), points[j]);
+            }
+        }
 
-// Calculate if 3 points are collinear: O(1)
-bool areCollinear(const Point& p1, const Point& p2, const Point& p3) {
-    return ((p2.y_ - p1.y_) * (p3.x_ - p1.x_)) == ((p3.y_ - p1.y_) * (p2.x_ - p1.x_));
-}
+        // Sortera punkter efter lutning
+        std::sort(slopes.begin(), slopes.end(),
+                  [](const auto& a, const auto& b) { return a.first < b.first; });
 
-// Sort by slope: O(n log n)
-void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
-    std::sort(points.begin(), points.end(), [&p](const Point& a, const Point& b) {
-        return calculateSlope(p, a) < calculateSlope(p, b);
-    });
-}
+        // Sök efter grupper av punkter med samma lutning (kollineära)
+        size_t j = 0;
+        while (j < slopes.size()) {
+            Segment collinear{origin};
+            double current_slope = slopes[j].first;
 
-void findCollinearPoints(const Point& p, const std::vector<Point>& points, std::set<std::pair<Point, Point>>& lineSegments) {
-    // Find collinear points and store the line segments
-    for (size_t i = 0; i < points.size() - 1; ++i) {
-        if (p == points[i]) continue;  // Skip the current point
+            while (j < slopes.size() && slopes[j].first == current_slope) {
+                collinear.push_back(slopes[j].second);
+                ++j;
+            }
 
-        double slope1 = calculateSlope(p, points[i]);
-        double slope2 = calculateSlope(p, points[i + 1]);
+            if (collinear.size() >= minPoints) {
+                std::sort(collinear.begin(), collinear.end());
 
-        if (slope1 == slope2) {
-            // Ensure consistent ordering of point pairs
-            lineSegments.insert({std::min(p, points[i]), std::max(p, points[i])});
-            lineSegments.insert({std::min(p, points[i + 1]), std::max(p, points[i + 1])});
+                // Skapa nyckel för att identifiera segmentet
+                std::ostringstream key_stream;
+                for (const auto& pt : collinear) key_stream << pt.x_ << "," << pt.y_ << "->";
+                std::string key = key_stream.str();
+
+                // Spara bara om segmentet inte redan är registrerat
+                if (!seen_keys.count(key)) {
+                    seen_keys.insert(key);
+                    candidates.push_back(collinear);
+                }
+            }
         }
     }
-}
 
-void writeSegmentsFile(const std::filesystem::path& filePath, const std::set<std::pair<Point, Point>>& segments) {
-    // Open the output file for writing
-    std::ofstream outFile(filePath);
-    if (!outFile) {
-        std::cerr << "Error: Cannot open segments output file: " << filePath << std::endl;
-        return;  // Exit if the file cannot be opened
+    // Filtrera bort segment som är delmängder av andra segment
+    std::vector<Segment> final_segments;
+    for (const auto& seg : candidates) {
+        bool isSub = false;
+        for (const auto& other : candidates) {
+            if (&seg != &other && isSubsegment(seg, other)) {
+                isSub = true;
+                break;
+            }
+        }
+        if (!isSub) {
+            final_segments.push_back(seg);
+        }
     }
 
-    // Write each segment to the file
-    for (const auto& seg : segments) {
-        // Output format: x1 y1 x2 y2 (start point, end point)
-        outFile << seg.first.toString() << "->" << seg.second.toString() << "\n";
+    // Skriv ut de slutgiltiga segmenten
+    for (const auto& seg : final_segments) {
+        const Point& p1 = seg.front();
+        const Point& p2 = seg.back();
+        segmentsOut << p1.x_ << ' ' << p1.y_ << ' ' << p2.x_ << ' ' << p2.y_ << '\n';
+        for (const auto& pt : seg) detailsOut << pt.toString() << " ";
+        detailsOut << '\n';
     }
-
-    std::cout << "Segments file written to: " << filePath << std::endl;
-}
-
-// O(n^2 log n) -> O(n) * O(n log n)
-void analyseData(const std::filesystem::path& pointsFile, const std::filesystem::path& segmentsFile) {
-    /*
-     * Add code here
-     * Feel free to modify the function signature
-     * Break your code into small functions
-     */
-    
-    // Read points from the input file
-    std::vector<Point> points = readPoints(pointsFile);
-    if (points.empty()) {
-        return;  // Exit if there was an error reading points
-    }
-
-    // Create a set to store unique line segments
-    std::set<std::pair<Point, Point>> lineSegments;
-
-    // 1. 2. 3. Sort points by slope and find collinear
-    for (const Point& p : points) {
-        sortPointsBySlope(points, p);
-
-        findCollinearPoints(p, points, lineSegments);
-    }
-
-    // Write the unique line segments to the output file
-    writeSegmentsFile(segmentsFile, lineSegments);
 }
 
 void analyseData(const std::string& name) {
     std::filesystem::path points_name = name;
     std::filesystem::path segments_name = "segments-" + name;
-
     analyseData(data_dir / points_name, data_dir / "output" / segments_name);
 }
