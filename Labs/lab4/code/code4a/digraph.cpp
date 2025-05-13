@@ -117,9 +117,6 @@ void Digraph::pwsssp(int s) const {
    int v = s;
 
    while (true) {
-       int v = -1;
-       int minDist = std::numeric_limits<int>::max();
-
        for (const auto& e : table[v]) {
            int w = e.to;
            if (!done[w]) {
@@ -130,6 +127,8 @@ void Digraph::pwsssp(int s) const {
                }
            }
        }
+
+
    }
 }
 
