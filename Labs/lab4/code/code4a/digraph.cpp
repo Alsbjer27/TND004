@@ -111,29 +111,21 @@ void Digraph::pwsssp(int s) const {
         path[i] = 0;
         done[i] = false;
     }
+
    dist[s] = 0;
-   dist[s] = true;
+   done[s] = true;
    int v = s;
 
    while (true) {
        int v = -1;
        int minDist = std::numeric_limits<int>::max();
 
-       for (int i = 0; i < size; ++i) {
-           if (!done[i] && dist[i] < minDist) {
-               minDist = dist[i];
-               v = i;
-           }
-       }
-       if (v == -1) break;
-       done[v] = true;
-
        for (const auto& e : table[v]) {
            int w = e.to;
            if (!done[w]) {
                int cost = e.weight;
                if (dist[v] + cost < dist[w]) {
-                   dist[w] = dist[v];
+                   dist[w] = dist[v] + cost;
                    path[w] = v;
                }
            }
