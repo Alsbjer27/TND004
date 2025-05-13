@@ -77,6 +77,7 @@ void Graph::mstPrim() const {
 
     // *** TODO ***
     int start = 1;
+    int totalweight = 0;
     dist[start] = 0;
     done[start] = true;
 
@@ -85,11 +86,11 @@ void Graph::mstPrim() const {
     while (true) {
         for (const auto& edge : table[v]) {
             int u = edge.to;
-            int w = edge.weight;
+            int weight = edge.weight;
 
-            if (done[u] == false && dist[u] > w) {
+            if (done[u] == false && dist[u] > weight) {
                 path[u] = v;
-                dist[u] = w;
+                dist[u] = weight;
             }
         }
 
@@ -107,7 +108,12 @@ void Graph::mstPrim() const {
             break;
         }
         done[v] = true;
+        if (path[v] != 0) {
+            totalweight += min;
+        }
+        std::cout << Edge(path[v], v, dist[v]) << std::endl;
     }
+    std::cout << std::endl << std::format("Total weight = {}", totalweight) << std::endl;
 }
 
 // Kruskal's minimum spanning tree algorithm
