@@ -76,11 +76,53 @@ void Graph::mstPrim() const {
     std::vector<bool> done(size + 1, false);
 
     // *** TODO ***
+    int start = 1;
+    dist[start] = 0;
+    done[start] = true;
+
+    int v = start;
+
+    while (true) {
+        for (const auto& edge : table[v]) {
+            int u = edge.to;
+            int w = edge.weight;
+
+            if (done[u] == false && dist[u] > w) {
+                path[u] = v;
+                dist[u] = w;
+            }
+        }
+
+        // Find smallest undone distance vertex
+        int min = std::numeric_limits<int>::max();
+        for (int i = 1; i <= size; ++i) {
+            if (!done[i] && dist[i] < min) {
+                min = dist[i];
+                v = i;
+            }
+        }
+
+        // Step 3
+        if (min == std::numeric_limits<int>::max()) {
+            break;
+        }
+        done[v] = true;
+    }
 }
 
 // Kruskal's minimum spanning tree algorithm
 void Graph::mstKruskal() const {
     // *** TODO ***
+    //std::vector<Edge> heap{ n_edges };          // Heap
+    //DSets D{ size };                            // Dset
+
+    //std::make_heap(heap.begin(), heap.end(), std::greater<int>());   // Make min heap -> cpp refrence
+
+    //int counter = 0;
+
+    //while (counter < n_edges - 1) {
+    //    //std::pop_heap(heap.begin(), heap.end(), std::greater<int>{});
+    //}
 }
 
 // print graph
