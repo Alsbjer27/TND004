@@ -36,25 +36,21 @@ public:
     long long y_;
 };
 
+#pragma region Function Declerations
 std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath);
 double calculateSlope(const Point& p, const Point& q);
 void sortPointsBySlope(std::vector<Point>& points, const Point& p);
 std::string detailsLineFormatting(const std::vector<Point>& pts);
-
-/* ***** Not sure if this approach is O(N^2 log N) ***** */
-
+void copyVectorExceptP(std::vector<Point>& fromVector, std::vector<Point> toVector, const Point& p);
 void writeSegmentsFileDetailed(const std::filesystem::path& segmentsFileDetailed,
                                const std::vector<Point>& pointsLine);
-
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
                          std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
                          std::vector<Point>& collinearGroup,
                          const std::filesystem::path& segmentsFileDetailed);
-
 void writeSegmentsFile(const std::filesystem::path& segmentsFile,
                        const std::set<std::pair<Point, Point>>& segments);
-
-/* ***************************************************** */
+#pragma endregion
 
 int main() {
     std::cout << "Enter the name of input points file: ";
@@ -93,20 +89,14 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
 
     // 1. 2. 3. Sort points by slope and find collinear
     for (const Point& p : points) {
-        other_points.clear();
-
-        // Copy points except p
-        for (const Point& c : points) {
-            if (c == p) { continue; }
-
-            other_points.push_back(c);
-        }
+        copyVectorExceptP(points, other_points, p);
 
         sortPointsBySlope(other_points, p);
+
         findCollinearPoints(p, other_points, uniqueSegmentEndpoints, collinearGroup, segmentsFileDetailed);
     }
 
-    //writeSegmentsFile(segmentsFile, uniqueSegmentEndpoints);
+    writeSegmentsFile(segmentsFile, uniqueSegmentEndpoints);
 }
 
 void analyseData(const std::string& name) {
@@ -201,6 +191,21 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
     }
 }
 
+#pragma region Copy Vector Exept For Point P
+// Copy points except p
+void copyVectorExceptP(std::vector<Point>& fromVector, std::vector<Point> toVector, const Point& p) {
+    toVector.clear();
+
+    for (const Point& c : fromVector) {
+        if (c == p) {
+            continue;
+        }
+
+        toVector.push_back(c);
+    }
+}
+#pragma endregion
+
 #pragma region Write File Functions
 std::string detailsLineFormatting(const std::vector<Point>& pts) {
     std::string s;
@@ -263,11 +268,7 @@ std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath) {
     pointsFileStream >> n_points;
 
     if (n_points < minPoints) {
-        std::cout << std::format(
-                         "Not enough points, in order to find patterns, a minimum of {} points are "
-                         "required",
-                         minPoints)
-                  << std::endl;
+        std::cout << std::format("Not enough points, {} points are required", minPoints) << std::endl;
         return {};
     }
 
