@@ -119,16 +119,40 @@ void Graph::mstPrim() const {
 // Kruskal's minimum spanning tree algorithm
 void Graph::mstKruskal() const {
     // *** TODO ***
-    //std::vector<Edge> heap{ n_edges };          // Heap
-    //DSets D{ size };                            // Dset
+    std::vector<Edge> heap;          // Heap
+    
+    for (int i = 1; i <= size; ++i) {
+        for (const auto& e : table[i]) {
+            if (e.from < e.to) {
+                heap.push_back(e);
+            }
+        }
+    }
+    
+    std::make_heap(heap.begin(), heap.end(), std::greater<Edge>());   // Make min heap -> cpp refrence
+    DSets D{ size };                            // Dset
 
-    //std::make_heap(heap.begin(), heap.end(), std::greater<int>());   // Make min heap -> cpp refrence
+    int totalWeight = 0;
+    int edgeCount = 0;
 
-    //int counter = 0;
 
-    //while (counter < n_edges - 1) {
-    //    //std::pop_heap(heap.begin(), heap.end(), std::greater<int>{});
-    //}
+
+    while (edgeCount < size - 1 && !heap.empty()) {
+        std::pop_heap(heap.begin(), heap.end(), std::greater<Edge>{});
+        Edge minEdge = heap.back();
+        heap.pop_back();
+
+        int uSet = D.find(minEdge.from);
+        int vSet = D.find(minEdge.to);
+
+        if (uSet != vSet) {
+            D.join(uSet, vSet);
+            std::cout << minEdge << std::endl;
+            totalWeight = minEdge.weight;
+            ++edgeCount;
+        }
+    }
+    std::cout << "\nTotal weight = " << totalWeight << std::endl;
 }
 
 // print graph
