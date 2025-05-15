@@ -43,12 +43,10 @@ void sortPointsBySlope(std::vector<Point>& points, const Point& p);
 std::string detailsLineFormatting(const std::vector<Point>& pts);
 void copyVectorExceptP(const std::vector<Point>& fromVector, std::vector<Point>& toVector,
                        const Point& p);
-void writeSegmentsFileDetailed(const std::filesystem::path& segmentsFileDetailed,
-                               const std::vector<Point>& pointsLine);
+void writeSegmentsFileDetailed(std::ofstream& segmentsFileDetailed, const std::vector<Point>& pointsLine);
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
                          std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
-                         std::vector<Point>& collinearGroup,
-                         const std::filesystem::path& segmentsFileDetailed);
+                         std::vector<Point>& collinearGroup, std::ofstream& detailedSegmentsStream);
 void writeSegmentsFile(const std::filesystem::path& segmentsFile,
                        const std::set<std::pair<Point, Point>>& segments);
 #pragma endregion
@@ -64,7 +62,8 @@ int main() {
 /* ***************************************************** */
 
 // O(n^2 log n) -> O(n) * O(n log n)
-void analyseData(const std::filesystem::path& pointsFile, const std::filesystem::path& segmentsFile, const std::filesystem::path& segmentsFileDetailed) {
+void analyseData(const std::filesystem::path& pointsFile, const std::filesystem::path& segmentsFile, 
+                 const std::filesystem::path& segmentsFileDetailed) {
     /*
      * Add code here
      * Feel free to modify the function signature
@@ -87,16 +86,29 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
     other_points.reserve(points.size() - 1);        // O(n) space
     collinearGroup.reserve(points.size());          // O(n) space
 
+    // Open the detailed segments file for writing progressively
+    std::ofstream detailedSegmentsStream(segmentsFileDetailed);
+    if (!detailedSegmentsStream) {
+        std::cerr << "Error: Cannot open detailed segments output file: " << segmentsFileDetailed
+                  << std::endl;
+        return;
+    }
+
     // 1. 2. 3. Sort points by slope and find collinear
     for (const Point& p : points) {
         copyVectorExceptP(points, other_points, p);
 
         sortPointsBySlope(other_points, p);
 
-        findCollinearPoints(p, other_points, uniqueSegmentEndpoints, collinearGroup, segmentsFileDetailed);
+        findCollinearPoints(p, other_points, uniqueSegmentEndpoints, collinearGroup, detailedSegmentsStream);
     }
 
+    detailedSegmentsStream.close();
+
     writeSegmentsFile(segmentsFile, uniqueSegmentEndpoints);
+
+    // In order to just write out once
+    std::cout << "Segments file detailed written to: " << segmentsFileDetailed << std::endl;
 }
 
 void analyseData(const std::string& name) {
@@ -142,8 +154,7 @@ double calculateSlope(const Point& p, const Point& q) {
 
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
                          std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
-                         std::vector<Point>& collinearGroup,
-                         const std::filesystem::path& segmentsFileDetailed) {
+                         std::vector<Point>& collinearGroup, std::ofstream& detailedSegmentsStream) {
 
     double prevSlope = std::numeric_limits<double>::quiet_NaN();
     collinearGroup.clear();
@@ -172,7 +183,7 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
         if ((p <=> *minIt) == 0) {
             std::pair<Point, Point> segment = {*minIt, *maxIt};
             if (uniqueSegmentEndpoints.insert(segment).second) {
-                writeSegmentsFileDetailed(segmentsFileDetailed, collinearGroup);
+                writeSegmentsFileDetailed(detailedSegmentsStream, collinearGroup);
             }
         }
 
@@ -188,7 +199,7 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
     if ((p <=> *minIt) == 0) {
         std::pair<Point, Point> segment = {*minIt, *maxIt};
         if (uniqueSegmentEndpoints.insert(segment).second) {
-            writeSegmentsFileDetailed(segmentsFileDetailed, collinearGroup);
+            writeSegmentsFileDetailed(detailedSegmentsStream, collinearGroup);
         }
     }
 }
@@ -234,22 +245,8 @@ void writeSegmentsFile(const std::filesystem::path& segmentsFile,
     std::cout << "Segments file written to: " << segmentsFile << std::endl;
 }
 
-void writeSegmentsFileDetailed(const std::filesystem::path& segmentsFileDetailed,
-                               const std::vector<Point>& pointsLine) {
-    // Open the detailed segments file for writing progressively
-    std::ofstream detailedSegmentsStream(segmentsFileDetailed);
-    if (!detailedSegmentsStream) {
-        std::cerr << "Error: Cannot open detailed segments output file: " << segmentsFileDetailed
-                  << std::endl;
-        // Handle error appropriately
-        return;
-    }
-
+void writeSegmentsFileDetailed(std::ofstream& detailedSegmentsStream, const std::vector<Point>& pointsLine) {
     detailedSegmentsStream << detailsLineFormatting(pointsLine) << "\n";
-
-    detailedSegmentsStream.close();
-
-    std::cout << "Segments file written to: " << segmentsFileDetailed << std::endl;
 }
 #pragma endregion
 
