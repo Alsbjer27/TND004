@@ -41,7 +41,8 @@ std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath);
 double calculateSlope(const Point& p, const Point& q);
 void sortPointsBySlope(std::vector<Point>& points, const Point& p);
 std::string detailsLineFormatting(const std::vector<Point>& pts);
-void copyVectorExceptP(std::vector<Point>& fromVector, std::vector<Point> toVector, const Point& p);
+void copyVectorExceptP(const std::vector<Point>& fromVector, std::vector<Point>& toVector,
+                       const Point& p);
 void writeSegmentsFileDetailed(const std::filesystem::path& segmentsFileDetailed,
                                const std::vector<Point>& pointsLine);
 void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
@@ -81,11 +82,10 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
 
     std::vector<Point> other_points;
     std::vector<Point> collinearGroup;
-    std::vector<Point> linePoints;
     std::set<std::pair<Point, Point>> uniqueSegmentEndpoints; 
 
     other_points.reserve(points.size() - 1);        // O(n) space
-    collinearGroup.reserve(other_points.size());    // O(n) space
+    collinearGroup.reserve(points.size());          // O(n) space
 
     // 1. 2. 3. Sort points by slope and find collinear
     for (const Point& p : points) {
@@ -158,18 +158,20 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
             continue;
         }
 
-        if (collinearGroup.size() + 1 < minPoints) {
+        if (collinearGroup.size() < minPoints) {
             collinearGroup = {p, q};
             prevSlope = currentSlope;
             continue;
         }
 
         // New slope
-        Point minPt = *std::min_element(collinearGroup.begin(), collinearGroup.end());      // <- Chat GPT O(n)
+        auto [minIt, maxIt] = std::minmax_element(
+            collinearGroup.begin(), collinearGroup.end(),
+            [](auto const& a, auto const& b) { return (a <=> b) == std::strong_ordering::less; });   
 
-        if ((p <=> minPt) == 0) {
-            std::pair<Point, Point> pair = {collinearGroup.front(), collinearGroup.back()};
-            if (uniqueSegmentEndpoints.insert(pair).second) {
+        if ((p <=> *minIt) == 0) {
+            std::pair<Point, Point> segment = {*minIt, *maxIt};
+            if (uniqueSegmentEndpoints.insert(segment).second) {
                 writeSegmentsFileDetailed(segmentsFileDetailed, collinearGroup);
             }
         }
@@ -178,14 +180,14 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
         prevSlope = currentSlope;
     }
 
-    if (collinearGroup.size() + 1 < minPoints) { return; }
+    if (collinearGroup.size() < minPoints) { return; }
 
-    Point minPt = *std::min_element(collinearGroup.begin(), collinearGroup.end());          // <- Chat GPT O(n)
+    auto [minIt, maxIt] = std::minmax_element(
+        collinearGroup.begin(), collinearGroup.end());
 
-    if ((p <=> minPt) == 0) {
-        std::pair<Point, Point> pair = {collinearGroup.front(), collinearGroup.back()};
-
-        if (uniqueSegmentEndpoints.insert(pair).second) {
+    if ((p <=> *minIt) == 0) {
+        std::pair<Point, Point> segment = {*minIt, *maxIt};
+        if (uniqueSegmentEndpoints.insert(segment).second) {
             writeSegmentsFileDetailed(segmentsFileDetailed, collinearGroup);
         }
     }
@@ -193,14 +195,11 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
 
 #pragma region Copy Vector Exept For Point P
 // Copy points except p
-void copyVectorExceptP(std::vector<Point>& fromVector, std::vector<Point> toVector, const Point& p) {
+void copyVectorExceptP(const std::vector<Point>& fromVector, std::vector<Point>& toVector,
+                       const Point& p) {
     toVector.clear();
-
-    for (const Point& c : fromVector) {
-        if (c == p) {
-            continue;
-        }
-
+    for (auto const& c : fromVector) {
+        if (c == p) continue;
         toVector.push_back(c);
     }
 }
@@ -218,7 +217,7 @@ std::string detailsLineFormatting(const std::vector<Point>& pts) {
 
 // Modified writeSegmentsFile to output endpoint pairs
 void writeSegmentsFile(const std::filesystem::path& segmentsFile,
-                       const std::set<std::pair<Point, Point>>& segments) {
+                       const std::set<std::pair<Point, Point>>& uniqueSegments) {
     std::ofstream outFile(segmentsFile);
 
     if (!outFile) {
@@ -226,7 +225,7 @@ void writeSegmentsFile(const std::filesystem::path& segmentsFile,
         return;
     }
 
-    for (const auto& segment : segments) {
+    for (const auto& segment : uniqueSegments) {
         outFile << segment.first.cordOutputString() << " " << segment.second.cordOutputString();
         outFile << "\n";
     }
