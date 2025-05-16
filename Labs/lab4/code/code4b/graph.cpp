@@ -148,7 +148,7 @@ void Graph::mstKruskal() const {
         if (uSet != vSet) {
             D.join(uSet, vSet);
             std::cout << minEdge << std::endl;
-            totalWeight = minEdge.weight;
+            totalWeight += minEdge.weight;
             ++edgeCount;
         }
     }
