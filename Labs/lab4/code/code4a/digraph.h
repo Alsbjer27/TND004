@@ -45,6 +45,8 @@ public:
     // print shortest path from s to t and the corresponding path length
     void printPath(int t) const;
 
+    void printRecursion(int t) const;
+
 private:
     // -- DATA MEMBERS
     std::vector<std::list<Edge>> table;  // table of adjacency lists
@@ -59,7 +61,7 @@ private:
      */
     mutable std::vector<int> dist;
     mutable std::vector<int> path;
-    mutable std::vector<bool> done;  // just used in Dijktra’s algorithm
+    mutable std::vector<bool> done;  // just used in Dijktraï¿½s algorithm
 
     // -- Private CONSTRUCTOR
     explicit Digraph(int n);

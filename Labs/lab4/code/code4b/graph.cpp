@@ -76,11 +76,83 @@ void Graph::mstPrim() const {
     std::vector<bool> done(size + 1, false);
 
     // *** TODO ***
+    int start = 1;
+    int totalweight = 0;
+    dist[start] = 0;
+    done[start] = true;
+
+    int v = start;
+
+    while (true) {
+        for (const auto& edge : table[v]) {
+            int u = edge.to;
+            int weight = edge.weight;
+
+            if (done[u] == false && dist[u] > weight) {
+                path[u] = v;
+                dist[u] = weight;
+            }
+        }
+
+        // Find smallest undone distance vertex
+        int min = std::numeric_limits<int>::max();
+        for (int i = 1; i <= size; ++i) {
+            if (!done[i] && dist[i] < min) {
+                min = dist[i];
+                v = i;
+            }
+        }
+
+        // Step 3
+        if (min == std::numeric_limits<int>::max()) {
+            break;
+        }
+        done[v] = true;
+        if (path[v] != 0) {
+            totalweight += min;
+        }
+        std::cout << Edge(path[v], v, dist[v]) << std::endl;
+    }
+    std::cout << std::endl << std::format("Total weight = {}", totalweight) << std::endl;
 }
 
 // Kruskal's minimum spanning tree algorithm
 void Graph::mstKruskal() const {
     // *** TODO ***
+    std::vector<Edge> heap;          // Heap
+    
+    for (int i = 1; i <= size; ++i) {
+        for (const auto& e : table[i]) {
+            if (e.from < e.to) {
+                heap.push_back(e);
+            }
+        }
+    }
+    
+    std::make_heap(heap.begin(), heap.end(), std::greater<Edge>());   // Make min heap -> cpp refrence
+    DSets D{ size };                            // Dset
+
+    int totalWeight = 0;
+    int edgeCount = 0;
+
+
+
+    while (edgeCount < size - 1 && !heap.empty()) {
+        std::pop_heap(heap.begin(), heap.end(), std::greater<Edge>{});
+        Edge minEdge = heap.back();
+        heap.pop_back();
+
+        int uSet = D.find(minEdge.from);
+        int vSet = D.find(minEdge.to);
+
+        if (uSet != vSet) {
+            D.join(uSet, vSet);
+            std::cout << minEdge << std::endl;
+            totalWeight += minEdge.weight;
+            ++edgeCount;
+        }
+    }
+    std::cout << "\nTotal weight = " << totalWeight << std::endl;
 }
 
 // print graph

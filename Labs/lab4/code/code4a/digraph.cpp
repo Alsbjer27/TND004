@@ -72,16 +72,73 @@ void Digraph::uwsssp(int s) const {
     assert(s >= 1 && s <= size);
 
     // *** TODO ***
-    // dist vector should be initialized with std::numeric_limits<int>::max()
+
+    std::queue<int> Q; // Queue<vertex> q;
+
+    // Using the pseudo-code from Course book figure 9.18
+    for (size_t i = 0; i <= size; i++) {
+        dist[i] = std::numeric_limits<int>::max();
+        path[i] = 0;
+    }
+
+    dist[s] = 0;
+    Q.push(s); //q.enqueue(s)
+
+    while (!Q.empty()) {
+        int v = Q.front(); // Vertex v = q.dequeue 
+        Q.pop();
+
+        for (const auto& e : table[v]) { // for each vertex w adjacent to v
+            int w = e.to;
+            if (dist[w] == std::numeric_limits<int>::max()) { // if(w.dist == INF)
+                dist[w] = dist[v] + 1;
+                path[w] = v;
+                Q.push(w);
+            }
+        }
+    }
 }
 
 // construct positive weighted single source shortest path-tree for start vertex s
-// Dijktra’s algorithm
+// Dijktraï¿½s algorithm
 void Digraph::pwsssp(int s) const {
     assert(s >= 1 && s <= size);
 
     // *** TODO ***
-    // dist vector should be initialized with std::numeric_limits<int>::max()
+
+    for (size_t i = 1; i <= size; i++){
+        dist[i] = std::numeric_limits<int>::max();
+        path[i] = 0;
+        done[i] = false;
+    }
+
+   dist[s] = 0;
+   done[s] = true;
+   int v = s;
+
+   while (true) {
+       for (const auto& e : table[v]) {
+           int w = e.to;
+           int weight = e.weight;
+
+           if (!done[w] && dist[w] > dist[v] + weight) {
+              dist[w] = dist[v] + weight;
+              path[w] = v;
+           }
+       }
+       int min = std::numeric_limits<int>::max();
+       for (int i = 1; i <= size; ++i) {
+           if(!done[i] && dist[i] < min) {
+               min = dist[i];
+               v = i;
+           }
+       }
+
+       if (min == std::numeric_limits<int>::max()) {
+           break;
+       }
+       done[v] = true;
+   }
 }
 
 // print graph
@@ -123,4 +180,16 @@ void Digraph::printPath(int t) const {
     assert(t >= 1 && t <= size);
 
     // *** TODO ***
+    printRecursion(t);
+    std::cout << "(" << dist[t] << ")";
+}
+
+void Digraph::printRecursion(int t) const {
+    if(path[t] == 0){
+        std::cout << t;
+        return;
+    }
+
+    printRecursion(path[t]);
+    std::cout << " -> " << t;
 }

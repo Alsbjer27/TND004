@@ -35,10 +35,18 @@ void DSets::join(int r, int s) {
     assert(V[s] < 0);
 
     // simple union
-    V[r] = s;
+    //V[r] = s;
 
     // *** TODO ***
     // Do Union by Size
+    if (V[s] < V[r]) {
+        V[s] += V[r];
+        V[r] = s;
+    }
+    else {
+        V[r] += V[s];
+        V[s] = r;
+    }
 }
 
 // return name of current set for x
@@ -47,14 +55,21 @@ int DSets::find(int x) {
     assert(x >= 1 && x <= std::ssize(V) - 1);
 
     // simple find
-    if (V[x] < 0) {
+    /*if (V[x] < 0) {
         return x;
     } else {
         return find(V[x]);
-    }
+    }*/
 
      // *** TODO ***
     // find with path compression
+
+    if (V[x] < 0) {
+        return x;
+    }
+    else {
+        return V[x] = find(V[x]);
+    }
 }
 
 // just in case ...
