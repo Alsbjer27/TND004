@@ -50,12 +50,12 @@ std::vector<Point> readPoints(const std::filesystem::path& pointsFilePath);
 double calculateSlope(const Point& p, const Point& q);
 void sortPointsBySlope(std::vector<Point>& points, const Point& p);
 std::string detailsLineFormatting(const std::vector<Point>& pts);
-std::vector<Point> copyVectorExceptP(const std::vector<Point>& fromVector, const Point& p);
-void writeSegmentsFileDetailed(std::ofstream& segmentsFileDetailed,
-                               const std::vector<Point>& pointsLine);
-void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP,
+void copyVectorExceptP(const std::vector<Point>& fromVector, std::vector<Point>& toVector,
+                       const Point& p);
+void writeSegmentsFileDetailed(std::ofstream& segmentsFileDetailed, const std::vector<Point>& pointsLine);
+void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
                          std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
-                         std::ofstream& detailedSegmentsStream);
+                         std::vector<Point>& collinearGroup, std::ofstream& detailedSegmentsStream);
 void writeSegmentsFile(const std::filesystem::path& segmentsFile,
                        const std::set<std::pair<Point, Point>>& segments);
 #pragma endregion
@@ -103,9 +103,12 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
     // Sort by cordinate
     std::sort(points.begin(), points.end());
 
-    std::vector<Point> pointsExceptP;
-    std::set<std::pair<Point, Point>> uniqueSegmentEndpoints;
-    std::vector<std::vector<Point>> uniqueSegments;
+    std::vector<Point> other_points;
+    std::vector<Point> collinearGroup;
+    std::set<std::pair<Point, Point>> uniqueSegmentEndpoints; 
+
+    other_points.reserve(points.size() - 1);        // O(n) space
+    collinearGroup.reserve(points.size());          // O(n) space
 
     // Open the detailed segments file for writing progressively
     std::ofstream detailedSegmentsStream(segmentsFileDetailed);
@@ -117,11 +120,11 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
 
     // 1. 2. 3. Sort points by slope and find collinear
     for (const Point& p : points) {
-        pointsExceptP = copyVectorExceptP(points, p);
+        copyVectorExceptP(points, other_points, p);
 
-        sortPointsBySlope(pointsExceptP, p);
+        sortPointsBySlope(other_points, p);
 
-        findCollinearPoints(p, pointsExceptP, uniqueSegmentEndpoints, detailedSegmentsStream);
+        findCollinearPoints(p, other_points, uniqueSegmentEndpoints, collinearGroup, detailedSegmentsStream);
     }
 
     detailedSegmentsStream.close();
@@ -141,59 +144,6 @@ void analyseData(const std::string& name) {
 }
 
 /* ***************************************************** */
-
-void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP,
-                         std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
-                         std::ofstream& detailedSegmentsStream) {
-
-    double prevSlope = std::numeric_limits<double>::quiet_NaN();
-    std::vector<Point> collinearGroup;
-    collinearGroup.reserve(pointsExceptP.size() + 1);  // O(n) space
-    collinearGroup.clear();
-
-    collinearGroup = {p};
-    for (const Point& q : pointsExceptP) {
-        double currentSlope = calculateSlope(p, q);
-
-        if (std::isnan(prevSlope) || currentSlope == prevSlope) {
-            collinearGroup.push_back(q);
-            prevSlope = currentSlope;
-            continue;
-        }
-
-        if (collinearGroup.size() < minPoints) {
-            collinearGroup = {p, q};
-            prevSlope = currentSlope;
-            continue;
-        }
-
-        // New slope
-        auto [minIt, maxIt] = std::minmax_element(collinearGroup.begin(), collinearGroup.end());
-
-        if (p == *minIt) {
-            std::pair<Point, Point> segment = {*minIt, *maxIt};
-            if (uniqueSegmentEndpoints.insert(segment).second) {
-                writeSegmentsFileDetailed(detailedSegmentsStream, collinearGroup);
-            }
-        }
-
-        collinearGroup = {p, q};
-        prevSlope = currentSlope;
-    }
-
-    if (collinearGroup.size() < minPoints) {
-        return;
-    }
-
-    auto [minIt, maxIt] = std::minmax_element(collinearGroup.begin(), collinearGroup.end());
-
-    if (p == *minIt) {
-        std::pair<Point, Point> segment = {*minIt, *maxIt};
-        if (uniqueSegmentEndpoints.insert(segment).second) {
-            writeSegmentsFileDetailed(detailedSegmentsStream, collinearGroup);
-        }
-    }
-}
 
 #pragma region Sorting points by slope
 // Sort by slope: O(n log n)
@@ -226,18 +176,67 @@ double calculateSlope(const Point& p, const Point& q) {
 }
 #pragma endregion
 
-#pragma region Copy Vector Exept For Point P
-// Copy points except p
-std::vector<Point> copyVectorExceptP(const std::vector<Point>& fromVector, const Point& p) {
-    std::vector<Point> pointsExceptP;
-    pointsExceptP.reserve(fromVector.size() - 1);
+void findCollinearPoints(const Point& p, const std::vector<Point>& other_points,
+                         std::set<std::pair<Point, Point>>& uniqueSegmentEndpoints,
+                         std::vector<Point>& collinearGroup, std::ofstream& detailedSegmentsStream) {
 
-    for (auto const& c : fromVector) {
-        if (c == p) continue;
-        pointsExceptP.push_back(c);
+    double prevSlope = std::numeric_limits<double>::quiet_NaN();
+    collinearGroup.clear();
+
+    collinearGroup = {p};
+    for (const Point& q : other_points) {
+        double currentSlope = calculateSlope(p, q);
+
+        if (std::isnan(prevSlope) || currentSlope == prevSlope) {
+            collinearGroup.push_back(q);
+            prevSlope = currentSlope;
+            continue;
+        }
+
+        if (collinearGroup.size() < minPoints) {
+            collinearGroup = {p, q};
+            prevSlope = currentSlope;
+            continue;
+        }
+
+        // New slope
+        auto [minIt, maxIt] = std::minmax_element(
+            collinearGroup.begin(), collinearGroup.end(),
+            [](auto const& a, auto const& b) { return (a <=> b) == std::strong_ordering::less; });   
+
+        if ((p <=> *minIt) == 0) {
+            std::pair<Point, Point> segment = {*minIt, *maxIt};
+            if (uniqueSegmentEndpoints.insert(segment).second) {
+                writeSegmentsFileDetailed(detailedSegmentsStream, collinearGroup);
+            }
+        }
+
+        collinearGroup = {p, q};
+        prevSlope = currentSlope;
     }
 
-    return pointsExceptP;
+    if (collinearGroup.size() < minPoints) { return; }
+
+    auto [minIt, maxIt] = std::minmax_element(
+        collinearGroup.begin(), collinearGroup.end());
+
+    if ((p <=> *minIt) == 0) {
+        std::pair<Point, Point> segment = {*minIt, *maxIt};
+        if (uniqueSegmentEndpoints.insert(segment).second) {
+            writeSegmentsFileDetailed(detailedSegmentsStream, collinearGroup);
+        }
+    }
+}
+
+#pragma region Copy Vector Exept For Point P
+// Copy points except p
+void copyVectorExceptP(const std::vector<Point>& fromVector, std::vector<Point>& toVector,
+                       const Point& p) {
+    toVector.clear();
+    for (auto const& c : fromVector) {
+        if (c == p) continue;
+        toVector.push_back(c);
+    }
 }
 #pragma endregion
 
