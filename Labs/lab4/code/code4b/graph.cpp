@@ -133,8 +133,6 @@ void Graph::mstKruskal() const {
     int totalWeight = 0;
     int edgeCount = 0;
 
-
-
     while (edgeCount < size - 1 && !heap.empty()) {
         std::pop_heap(heap.begin(), heap.end(), std::greater<Edge>{});
         Edge minEdge = heap.back();

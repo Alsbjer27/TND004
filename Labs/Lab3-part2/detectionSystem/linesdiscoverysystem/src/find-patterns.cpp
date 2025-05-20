@@ -132,7 +132,7 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP
         }
 
         // New slope
-        if (collinearGroup.size() + 1 > minPoints) {
+        if (collinearGroup.size() > minPoints) {
             // New slope
             auto [minIt, maxIt] = std::minmax_element(collinearGroup.begin(), collinearGroup.end());
 
@@ -146,7 +146,7 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP
     }
 
     // Handle the last set of slopes
-    if (collinearGroup.size() + 1 > minPoints) {
+    if (collinearGroup.size() > minPoints) {
         // New slope
         auto [minIt, maxIt] = std::minmax_element(collinearGroup.begin(), collinearGroup.end());
 
