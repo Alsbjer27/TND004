@@ -120,39 +120,32 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP
                          std::vector<Point>& collinearGroup) {
     collinearGroup = {p};
 
+    Point minPoint = p;
     double prevSlope = std::numeric_limits<double>::quiet_NaN(); // Define it as NaN just to initilize it
 
     for (const Point& q : pointsExceptP) {
         double currentSlope = calculateSlope(p, q);
 
         if (std::isnan(prevSlope) || currentSlope == prevSlope) {
+            if (q < minPoint) { minPoint = q; }
             collinearGroup.push_back(q);
             prevSlope = currentSlope;
             continue;
         }
 
         // New slope
-        if (collinearGroup.size() > minPoints) {
-            // New slope
-            auto [minIt, maxIt] = std::minmax_element(collinearGroup.begin(), collinearGroup.end());
-
-            if (p == *minIt && *maxIt == collinearGroup.back()) {
-                uniqueSegments.insert(collinearGroup);
-            }
+        if ((collinearGroup.size() > minPoints - 1) && minPoint == p) {
+            uniqueSegments.insert(collinearGroup);
         }
 
         collinearGroup = {p, q};
         prevSlope = currentSlope;
+        minPoint = (q < p) ? q : p;
     }
 
     // Handle the last set of slopes
-    if (collinearGroup.size() > minPoints) {
-        // New slope
-        auto [minIt, maxIt] = std::minmax_element(collinearGroup.begin(), collinearGroup.end());
-
-        if (p == *minIt && *maxIt == collinearGroup.back()) {
-            uniqueSegments.insert(collinearGroup);
-        }
+    if ((collinearGroup.size() > minPoints - 1) && minPoint == p) {
+        uniqueSegments.insert(collinearGroup);
     }
 }
 

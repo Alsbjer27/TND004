@@ -16,7 +16,6 @@ int main() try {
     std::string s;
     std::cin >> s;  // e.g. points1.txt
 
-
     plotData(s);
 } catch (const std::exception& e) {
     fmt::print("Error: {}", e.what());
