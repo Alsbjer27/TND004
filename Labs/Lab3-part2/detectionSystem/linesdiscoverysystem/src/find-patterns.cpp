@@ -49,13 +49,13 @@ std::vector<Point>& copyPointsExceptP(std::vector<Point>& fromVector, std::vecto
 double calculateSlope(const Point& p, const Point& q);
 void sortPointsBySlope(std::vector<Point>& points, const Point& p);
 void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP,
-                         std::set<std::vector<Point>>& uniqueSegments,
+                         std::vector<std::vector<Point>>& uniqueSegments,
                          std::vector<Point>& collinearGroup);
 void analyseData(const std::filesystem::path& pointsFile, const std::filesystem::path& segmentsFile,
                  const std::filesystem::path& segmentsFileDetailed);
 void writeSegmentsFiles(const std::filesystem::path& segmentsFile,
                         const std::filesystem::path& segmentsFileDetailed,
-                        const std::set<std::vector<Point>>& uniqueSegments);
+                        const std::vector<std::vector<Point>>& uniqueSegments);
 #pragma endregion
 
 /* ***************************************************** */
@@ -95,7 +95,7 @@ void analyseData(const std::filesystem::path& pointsFile, const std::filesystem:
     pointsExceptP.reserve(points.size() - 1);
 
     // Store unique segments
-    std::set<std::vector<Point>> uniqueSegments;
+    std::vector<std::vector<Point>> uniqueSegments;
 
     std::vector<Point> collinearGroup;
     collinearGroup.reserve(points.size());
@@ -116,7 +116,7 @@ void sortPointsBySlope(std::vector<Point>& points, const Point& p) {
 }
 
 void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP,
-                         std::set<std::vector<Point>>& uniqueSegments,
+                         std::vector<std::vector<Point>>& uniqueSegments,
                          std::vector<Point>& collinearGroup) {
     collinearGroup = {p};
 
@@ -135,7 +135,7 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP
 
         // New slope
         if ((collinearGroup.size() > minPoints - 1) && minPoint == p) {
-            uniqueSegments.insert(collinearGroup);
+            uniqueSegments.push_back(collinearGroup);
         }
 
         collinearGroup = {p, q};
@@ -145,7 +145,7 @@ void findCollinearPoints(const Point& p, const std::vector<Point>& pointsExceptP
 
     // Handle the last set of slopes
     if ((collinearGroup.size() > minPoints - 1) && minPoint == p) {
-        uniqueSegments.insert(collinearGroup);
+        uniqueSegments.push_back(collinearGroup);
     }
 }
 
@@ -232,7 +232,7 @@ std::string detailsLineFormatting(const std::vector<Point>& pts) {
 
 void writeSegmentsFiles(const std::filesystem::path& segmentsFile,
                         const std::filesystem::path& segmentsFileDetailed, 
-                        const std::set<std::vector<Point>>& uniqueSegments) {
+                        const std::vector<std::vector<Point>>& uniqueSegments) {
     std::ofstream outFile(segmentsFile);
     std::ofstream outFileDetailed(segmentsFileDetailed);
 
